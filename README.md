@@ -46,3 +46,14 @@ kubectl run k8s-shell --restart=Never --rm -iqt --image ghcr.io/yogendra/k8s-she
 - **-i**: Allow input. Required for `-t` option
 - **-t**: Create TTY for the run. Required to get output
 
+## Using curl
+
+```bash
+curl -sSL https://raw.githubusercontent.com/yogendra/k8s-shell/main/src/.bashrc >> ~/.bashrc
+
+curl -sSL https://raw.githubusercontent.com/yogendra/k8s-shell/main/src/.vimrc >> ~/.vimrc
+
+curl -sSL https://raw.githubusercontent.com/yogendra/k8s-shell/main/src/.tmux.conf >> ~/.tmux.conf
+
+
+```
