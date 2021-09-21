@@ -12,7 +12,7 @@ then
   IMAGE_TAG_ALT=${2:-}
 fi
 
-docker push -t $IMAGE_TAG
+docker push $IMAGE_TAG
 
 if [[ -n $IMAGE_TAG_ALT ]]
 then
