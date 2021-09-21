@@ -1,5 +1,11 @@
 #!/usr/bin/env sh
 
 set -euo pipefail
+OP=/config/${1:-.bashrc}
 
-cat .bashrc
+cat $OP
+
+if [[ $OP == /config/help ]]
+then
+  ls -A /config
+fi
