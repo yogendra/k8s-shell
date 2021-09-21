@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euoE pipefail
+SCRIPT_ROOT=$( cd `dirname $0`; pwd)
+source $SCRIPT_ROOT/common
+
+TAG=${1:-latest}
+IMAGE_TAG=$IMAGE:$TAG
+
+IMAGE_TAG_ALT=""
+if [[ $TAG != "latest" ]]
+then
+  IMAGE_TAG_ALT=${2:-}
+fi
+
+docker push -t $IMAGE_TAG
+
+if [[ -n $IMAGE_TAG_ALT ]]
+then
+  echo "Pushing $IMAGE_TAG_ALT"
+  docker tag $IMAGE_TAG $IMAGE_TAG_ALT
+  docker push $IMAGE_TAG_ALT
+fi

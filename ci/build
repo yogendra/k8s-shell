@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euoE pipefail
+SCRIPT_ROOT=$( cd `dirname $0`; pwd)
+source $SCRIPT_ROOT/common
+
+TAG=${1:-latest}
+IMAGE_TAG=$IMAGE:$TAG
+
+echo "Building $IMAGE_TAG"
+docker build -t $IMAGE_TAG -f $DOCKERFILE $DOCKER_CONTEXT

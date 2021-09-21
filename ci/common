@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -euoxE pipefail
+
+
+SCRIPT_ROOT=$( cd `dirname $0`; pwd)
+PROJECT_ROOT=$(cd $SCRIPT_ROOT/..; pwd)
+
+IMAGE=ghcr.io/yogendra/k8s-shell
+DOCKERFILE=${PROJECT_ROOT}/packaging/Dockerfile
+DOCKER_CONTEXT=${PROJECT_ROOT}
