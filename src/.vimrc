@@ -1,8 +1,3 @@
-" Install minimal vimrc using:
-" wget -q https://yogendra.me/minimal-vimrc  -O ~/.vimrc
-" OR
-" curl -sL https://yogendra.me/minimal-vimrc -o ~/.vimrc
-
 set autoindent
 set nobackup
 set nowritebackup
