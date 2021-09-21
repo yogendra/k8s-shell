@@ -1,0 +1,15 @@
+
+SYNTAX
+
+  With Docker:
+    docker run --rm -it ghcr.io/yogendra/k8s-shell <SUB-COMMAND>
+
+  With Kuberbernetes:
+    kubectl run k8s-shell --restart=Never --rm -iqt --image=ghcr.io/yogendra/k8s-shell -- <SUB-COMMAND>
+
+
+SUB-COMMAND
+  .bashrc     - (Default) Print .bashrc
+  help        - This message
+
+AVAILABLE SUB-COMMANDS
