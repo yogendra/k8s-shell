@@ -1,11 +1,49 @@
 source <(kubectl completion bash)
-complete -F __start_kubectl k
+
 alias k="kubectl"
-alias kgd="k get deploy"
+
+# get
+alias kg="k get"
 alias kgp="k get pods"
-alias kgn="k get nodes"
+alias kgpa="k get pods --all-namespaces"
+alias kgpw="k get pods -o wide"
+alias kgd="k get deploy"
 alias kgs="k get svc"
+alias kgn="k get nodes"
+alias kgns="k get namespaces"
 alias kge="k get events --sort-by='.metadata.creationTimestamp' | tail -8"
+
+# describe
+alias kd="k describe"
+alias kdp="k describe pod"
+alias kdd="k describe deploy"
+alias kds="k describe svc"
+
+# logs / exec / apply / delete
+alias kl="k logs"
+alias klf="k logs -f"
+alias kex="k exec -it"
+alias kaf="k apply -f"
+alias kdel="k delete"
+
+# context / config
+alias kctx="k config current-context"
+alias kcuc="k config use-context"
+alias kcgc="k config get-contexts"
+
+# switch (or print) the namespace on the current context, kubens-style
+kn() {
+  if [ -z "${1:-}" ]; then
+    kubectl config view --minify -o jsonpath='{..namespace}'; echo
+  else
+    kubectl config set-context --current --namespace="$1"
+  fi
+}
+
+# tab-completion for every alias above, not just `k`/`kubectl`
+complete -F __start_kubectl k kg kgp kgpa kgpw kgd kgs kgn kgns kge \
+  kd kdp kdd kds kl klf kex kaf kdel kctx kcuc kcgc kn
+
 export nks="-n kube-system"
 export ETCDCTL_API=3
 export k8s="https://k8s.io/examples"

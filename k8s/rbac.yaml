@@ -1,0 +1,27 @@
+# WARNING: this binds cluster-admin - unrestricted read/write across every
+# namespace and every resource in the cluster - to the k8s-shell Deployment's
+# ServiceAccount. Anyone who can `kubectl exec` into that pod (or read its
+# mounted token) effectively has cluster-admin. This is a debug/admin shell,
+# so that's deliberate here, but know what you're applying: for a safer
+# default, swap the ClusterRole below for "view" (read-only) or "edit"
+# (read/write, still no RBAC/cluster-scoped changes), and/or swap the
+# ClusterRoleBinding for a namespace-scoped RoleBinding.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-shell-sa
+  namespace: default
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-shell-crb
+subjects:
+  - kind: ServiceAccount
+    name: k8s-shell-sa
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io

@@ -12,10 +12,15 @@
 # seeds a writable emptyDir with a copy of that home dir before the shell
 # starts, so bash history / tmux resurrect / plugin state can still be
 # written without ever making the root filesystem writable.
+#
+# The mounted ServiceAccount token (see k8s/rbac.yaml, applied alongside
+# this file) lets the entrypoint generate an in-cluster kubeconfig, so
+# kubectl/helm/k9s/stern work against this cluster with no extra setup.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: k8s-shell
+  namespace: default
   labels:
     app.kubernetes.io/name: k8s-shell
 spec:
@@ -28,7 +33,7 @@ spec:
       labels:
         app.kubernetes.io/name: k8s-shell
     spec:
-      automountServiceAccountToken: false
+      serviceAccountName: k8s-shell-sa
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
