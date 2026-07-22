@@ -1,11 +1,131 @@
-FROM alpine:3
+FROM alpine:3.20 AS builder
 
-LABEL org.opencontainers.image.source = "https://github.com/yogendra/k8s-shell"
+ARG TARGETARCH
+
+LABEL org.opencontainers.image.source="https://github.com/yogendra-avgo/k8s-shell"
 LABEL org.opencontainers.image.authors="yogendrarampuria@gmail.com"
 
-RUN mkdir -p /config
-ADD packaging/entrypoint /entrypoint
-ADD src/* /config/
+# Tool Version Matrix
+ARG KUBECTL_VERSION="v1.30.2"
+ARG HELM_VERSION="v3.15.2"
+ARG ISTIO_VERSION="1.22.2"
+ARG VELERO_VERSION="v1.14.0"
+ARG K9S_VERSION="v0.32.4"
+ARG DIVE_VERSION="0.12.0"
+ARG GOVC_VERSION="v0.38.0"
+ARG STERN_VERSION="1.30.0"
+ARG YQ_VERSION="v4.44.2"
+ARG FZF_VERSION="0.55.0"
+ARG STARSHIP_VERSION="v1.20.1"
 
-USER nobody
-ENTRYPOINT ["/entrypoint"]
+RUN apk add --no-cache curl tar gzip jq ca-certificates
+
+WORKDIR /workspace
+
+# 1. kubectl
+RUN curl -sSL -o kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl" && \
+    chmod +x kubectl
+
+# 2. Helm
+RUN curl -sSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz" | tar -xz --strip-components=1 linux-${TARGETARCH}/helm && \
+    chmod +x helm
+
+# 3. istioctl
+RUN curl -sSL "https://github.com/istio/istio/releases/download/${ISTIO_VERSION}/istioctl-${ISTIO_VERSION}-linux-${TARGETARCH}.tar.gz" | tar -xz && \
+    chmod +x istioctl
+
+# 4. Velero
+RUN curl -sSL "https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERSION}/velero-${VELERO_VERSION}-linux-${TARGETARCH}.tar.gz" | tar -xz --strip-components=1 velero-${VELERO_VERSION}-linux-${TARGETARCH}/velero && \
+    chmod +x velero
+
+# 5. k9s (release assets use a capitalized "Linux")
+RUN curl -sSL "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_${TARGETARCH}.tar.gz" | tar -xz k9s && \
+    chmod +x k9s
+
+# 6. Dive
+RUN curl -sSL "https://github.com/wagoodman/dive/releases/download/v${DIVE_VERSION}/dive_${DIVE_VERSION}_linux_${TARGETARCH}.tar.gz" | tar -xz dive && \
+    chmod +x dive
+
+# 7. VMware govc CLI (release assets use "x86_64" instead of "amd64")
+RUN GOVC_ARCH=$([ "${TARGETARCH}" = "amd64" ] && echo "x86_64" || echo "${TARGETARCH}") && \
+    curl -sSL "https://github.com/vmware/govmomi/releases/download/${GOVC_VERSION}/govc_Linux_${GOVC_ARCH}.tar.gz" | tar -xz govc && \
+    chmod +x govc
+
+# 8. Stern
+RUN curl -sSL "https://github.com/stern/stern/releases/download/v${STERN_VERSION}/stern_${STERN_VERSION}_linux_${TARGETARCH}.tar.gz" | tar -xz stern && \
+    chmod +x stern
+
+# 9. yq
+RUN curl -sSL -o yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${TARGETARCH}" && \
+    chmod +x yq
+
+# 10. fzf (fuzzy finder, wired into .bashrc via `fzf --bash`)
+RUN curl -sSL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${TARGETARCH}.tar.gz" | tar -xz fzf && \
+    chmod +x fzf
+
+# 11. Starship prompt (musl build, matches the Alpine base)
+RUN STARSHIP_ARCH=$([ "${TARGETARCH}" = "amd64" ] && echo "x86_64-unknown-linux-musl" || echo "aarch64-unknown-linux-musl") && \
+    curl -sSL "https://github.com/starship/starship/releases/download/${STARSHIP_VERSION}/starship-${STARSHIP_ARCH}.tar.gz" | tar -xz starship && \
+    chmod +x starship
+
+# 12. herdr (AI agent terminal multiplexer)
+# NB: the installer reads $HERDR_INSTALL_DIR, not $BINDIR - it auto-detects the
+# build's target arch/os itself, which matches TARGETARCH under QEMU emulation.
+RUN curl -fsSL https://herdr.dev/install.sh | HERDR_INSTALL_DIR=/workspace sh
+
+
+# -------------------------------------------------------------
+# Final Image built on nicolaka/netshoot
+# -------------------------------------------------------------
+FROM nicolaka/netshoot:latest
+
+LABEL org.opencontainers.image.source="https://github.com/yogendra-avgo/k8s-shell"
+LABEL org.opencontainers.image.authors="yogendrarampuria@gmail.com"
+
+RUN apk add --no-cache \
+    tmux \
+    bash \
+    git \
+    jq \
+    ncurses \
+    ca-certificates
+
+# Non-root by default. Raw-socket netshoot tools (tcpdump, nmap SYN scans, ...)
+# still need `--user root` / extra capabilities if you reach for them.
+RUN addgroup -g 1000 shell && \
+    adduser -D -u 1000 -G shell -h /home/shell -s /bin/bash shell
+
+# Copy all binaries into place
+COPY --from=builder /workspace/kubectl /usr/local/bin/
+COPY --from=builder /workspace/helm /usr/local/bin/
+COPY --from=builder /workspace/istioctl /usr/local/bin/
+COPY --from=builder /workspace/velero /usr/local/bin/
+COPY --from=builder /workspace/k9s /usr/local/bin/
+COPY --from=builder /workspace/dive /usr/local/bin/
+COPY --from=builder /workspace/govc /usr/local/bin/
+COPY --from=builder /workspace/stern /usr/local/bin/
+COPY --from=builder /workspace/yq /usr/local/bin/
+COPY --from=builder /workspace/fzf /usr/local/bin/
+COPY --from=builder /workspace/starship /usr/local/bin/
+COPY --from=builder /workspace/herdr /usr/local/bin/
+
+USER shell
+WORKDIR /home/shell
+ENV HOME=/home/shell
+
+# Dotfiles
+COPY --chown=shell:shell src/.bashrc src/.vimrc src/.tmux.conf /home/shell/
+
+# tmux plugin manager + the plugins already declared in .tmux.conf, vendored
+# at build time (pinned commits) so tmux works fully offline on first run.
+RUN mkdir -p /home/shell/.tmux/plugins && \
+    git clone --quiet https://github.com/tmux-plugins/tpm.git /home/shell/.tmux/plugins/tpm && \
+    git -C /home/shell/.tmux/plugins/tpm checkout --quiet e261deb1b47614eed3400089ce7197dc68acc4eb && \
+    git clone --quiet https://github.com/tmux-plugins/tmux-sensible.git /home/shell/.tmux/plugins/tmux-sensible && \
+    git -C /home/shell/.tmux/plugins/tmux-sensible checkout --quiet 25cb91f42d020f675bb0a2ce3fbd3a5d96119efa && \
+    git clone --quiet https://github.com/tmux-plugins/tmux-resurrect.git /home/shell/.tmux/plugins/tmux-resurrect && \
+    git -C /home/shell/.tmux/plugins/tmux-resurrect checkout --quiet cff343cf9e81983d3da0c8562b01616f12e8d548 && \
+    git clone --quiet https://github.com/tmux-plugins/tmux-continuum.git /home/shell/.tmux/plugins/tmux-continuum && \
+    git -C /home/shell/.tmux/plugins/tmux-continuum checkout --quiet 0698e8f4b17d6454c71bf5212895ec055c578da0
+
+CMD ["bash"]

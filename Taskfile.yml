@@ -1,0 +1,52 @@
+version: '3'
+
+vars:
+  DOCKERFILE: packaging/Dockerfile
+  CONTEXT: .
+  REPO: yogendra-avgo/k8s-shell
+  IMAGE: 'ghcr.io/{{.REPO}}'
+  TAG: latest
+  PLATFORMS: linux/amd64,linux/arm64
+
+tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the image for the native platform and load it into the local Docker daemon
+    cmds:
+      - docker buildx build --load -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+
+  smoke:
+    desc: Build (if needed) and sanity-check that every bundled tool actually runs
+    deps: [build]
+    cmds:
+      - |
+        docker run --rm {{.IMAGE}}:{{.TAG}} bash -lc '
+          set -e
+          kubectl version --client
+          helm version
+          istioctl version --remote=false
+          velero version --client-only
+          k9s version
+          dive --version
+          govc version
+          stern --version
+          yq --version
+          fzf --version
+          starship --version
+          tmux -V
+        '
+
+  push:
+    desc: Build for amd64+arm64 and push straight to the registry (requires `docker login` / buildx with QEMU)
+    cmds:
+      - docker buildx build --platform {{.PLATFORMS}} --push -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+
+  publish:
+    desc: Alias for push, used by CI
+    cmds:
+      - task: push
