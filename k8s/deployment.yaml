@@ -1,0 +1,75 @@
+# A standing, non-privileged k8s-shell you exec into on demand:
+#   kubectl apply -f k8s/deployment.yaml
+#   kubectl exec -it deploy/k8s-shell -- tmux attach -t main
+#
+# The image's ENTRYPOINT starts a detached tmux session and, since kubelet
+# doesn't give the container a tty, falls back to an idle keep-alive - so the
+# pod (and the tmux session inside it) stays up between exec sessions. Detach
+# with the tmux prefix + d; your work is still there next time you exec in.
+#
+# The container's home dir (dotfiles, tpm plugins) is baked into the image
+# read-only. Since the pod runs with readOnlyRootFilesystem, an initContainer
+# seeds a writable emptyDir with a copy of that home dir before the shell
+# starts, so bash history / tmux resurrect / plugin state can still be
+# written without ever making the root filesystem writable.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-shell
+  labels:
+    app.kubernetes.io/name: k8s-shell
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: k8s-shell
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: k8s-shell
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: seed-home
+          image: ghcr.io/yogendra-avgo/k8s-shell:latest
+          command: ["sh", "-c", "cp -a /home/shell/. /home-writable/"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: home
+              mountPath: /home-writable
+      containers:
+        - name: k8s-shell
+          image: ghcr.io/yogendra-avgo/k8s-shell:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: home
+              mountPath: /home/shell
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: home
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

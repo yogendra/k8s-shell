@@ -1,11 +1,21 @@
-#!/usr/bin/env sh
-
+#!/usr/bin/env bash
 set -euo pipefail
-OP=/config/${1:-.bashrc}
 
-cat $OP
-
-if [[ $OP == /config/help ]]
-then
-  ls -A /config
+# Any explicit command (docker run IMAGE <cmd>, kubectl exec, task smoke, ...)
+# bypasses tmux entirely and just runs as-is.
+if [ "$#" -gt 0 ]; then
+  exec "$@"
 fi
+
+SESSION="${TMUX_SESSION:-main}"
+
+tmux has-session -t "$SESSION" 2>/dev/null || tmux new-session -d -s "$SESSION"
+
+# Attach if we have a real terminal (docker run -it / kubectl exec -it).
+# Otherwise keep the container (and the detached tmux session inside it)
+# alive so it can be attached to later.
+if [ -t 0 ] && [ -t 1 ]; then
+  exec tmux attach-session -t "$SESSION"
+fi
+
+exec tail -f /dev/null

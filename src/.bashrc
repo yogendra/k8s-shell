@@ -13,3 +13,18 @@ function vaml()
 {
 vim -R -c 'set syntax=yaml' -;
 }
+
+# fzf - fuzzy finder (Ctrl-R history, Ctrl-T files, Alt-C cd)
+if command -v fzf >/dev/null 2>&1; then
+  eval "$(fzf --bash)"
+fi
+
+# starship - shell prompt
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init bash)"
+fi
+
+# tmux - drop into a persistent session automatically on interactive shells
+if [[ -z "$TMUX" && -n "$PS1" ]] && command -v tmux >/dev/null 2>&1; then
+  exec tmux new-session -A -s main
+fi
