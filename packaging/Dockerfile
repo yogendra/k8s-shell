@@ -149,7 +149,7 @@ WORKDIR /home/shell
 ENV HOME=/home/shell
 
 # Dotfiles
-COPY --chown=shell:shell src/.bashrc src/.vimrc /home/shell/
+COPY --chown=shell:shell src/.bashrc src/.bash_profile src/.vimrc /home/shell/
 RUN mkdir -p /home/shell/.config/tmux
 COPY --chown=shell:shell src/starship.toml /home/shell/.config/starship.toml
 COPY --chown=shell:shell src/tmux.conf /home/shell/.config/tmux/tmux.conf
@@ -164,8 +164,8 @@ RUN mkdir -p /home/shell/.config/tmux/plugins && \
 USER root
 
 # Give root the same shell experience for `docker run --user root` / raw-socket work.
-RUN cp -a /home/shell/.bashrc /home/shell/.vimrc /home/shell/.config /root/ && \
-    chown -R root:root /root/.bashrc /root/.vimrc /root/.config
+RUN cp -a /home/shell/.bashrc /home/shell/.bash_profile /home/shell/.vimrc /home/shell/.config /root/ && \
+    chown -R root:root /root/.bashrc /root/.bash_profile /root/.vimrc /root/.config
 
 COPY packaging/entrypoint /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint

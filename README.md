@@ -22,9 +22,12 @@ It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds
 - **herdr** (AI agent terminal multiplexer)
 
 Dotfiles live in [`src/`](src) and are baked into the image at
-`~/.bashrc`, `.vimrc`, `.config/starship.toml`, `.config/tmux/tmux.conf` -
-for both the default non-root user and root (see below), so the experience
-is the same either way. `ls`/`l`/`ll`/`la`/`lt`/... are aliased to eza, `cat`
+`~/.bashrc`, `.bash_profile`, `.vimrc`, `.config/starship.toml`,
+`.config/tmux/tmux.conf` - for both the default non-root user and root (see
+below), so the experience is the same either way. `.bash_profile` just
+sources `.bashrc`: Alpine's `/etc/profile` resets `PATH` for login shells
+before anything else runs, so without it a login shell would silently lose
+krew, aliases, and everything else in `.bashrc`. `ls`/`l`/`ll`/`la`/`lt`/... are aliased to eza, `cat`
 to bat, and fzf's file/history search is fd + bat powered, mirroring a
 typical local zsh setup. The starship prompt and tmux's catppuccin theme
 need a [Nerd Font](https://www.nerdfonts.com) in *your* terminal to render

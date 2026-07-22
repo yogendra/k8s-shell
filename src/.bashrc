@@ -7,6 +7,11 @@ if REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)" && [ -n "$R
   cd "$HOME" || true
 fi
 
+# krew: the Docker-image ENV PATH addition doesn't survive a login shell -
+# Alpine's /etc/profile unconditionally resets PATH before .bashrc ever runs.
+[ -d /usr/local/krew/bin ] && [[ ":$PATH:" != *":/usr/local/krew/bin:"* ]] && \
+  export PATH="/usr/local/krew/bin:$PATH"
+
 source <(kubectl completion bash)
 
 alias k="kubectl"
