@@ -39,6 +39,11 @@ tasks:
           fzf --version
           starship --version
           tmux -V
+          bat --version
+          tree --version
+          fd --version
+          eza --version
+          direnv --version
         '
 
   push:
