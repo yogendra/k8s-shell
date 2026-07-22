@@ -11,7 +11,7 @@ k9s:
     logoless: true
     crumbsless: false
     reactive: true
-    skin: dracula
+    skin: solarized-dark
     noIcons: true
     defaultsToFullScreen: false
   skipLatestRevCheck: false

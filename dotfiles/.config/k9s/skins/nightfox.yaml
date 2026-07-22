@@ -1,21 +1,21 @@
 # -----------------------------------------------------------------------------
-# Solarized Dark Skin
-# Based on: K9s Solarized Dark Skin
-# Author:   [@danmikita](danmikita@gmail.com)
+# K9s Nightfox Theme
+# Based on the Nightfox.nvim color scheme:
+# https://github.com/EdenEast/nightfox.nvim
 # -----------------------------------------------------------------------------
 
 # Styles...
-foreground: &foreground "#839495"
-background: &background "#002833"
-current_line: &current_line "#003440"
-selection: &selection "#003440"
-comment: &comment "#6272a4"
-cyan: &cyan "#2aa197"
-green: &green "#859901"
-orange: &orange "#cb4a16"
-magenta: &magenta "#d33582"
-blue: &blue "#2aa198"
-red: &red "#dc312e"
+foreground: &foreground "#cdcecf"
+background: &background "#192330"
+current_line: &current_line "#2b3b51"
+selection: &selection "#2b3b51"
+comment: &comment "#738091"
+cyan: &cyan "#63cdcf"
+green: &green "#81b29a"
+orange: &orange "#f4a261"
+magenta: &magenta "#9d79d6"
+blue: &blue "#719cd6"
+red: &red "#c94f6d"
 
 # Skin...
 k9s:
