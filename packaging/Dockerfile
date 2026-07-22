@@ -93,12 +93,23 @@ RUN apk add --no-cache \
     tree \
     fd \
     eza \
-    direnv
+    direnv \
+    gawk \
+    sed \
+    grep
 
 # Non-root by default. Raw-socket netshoot tools (tcpdump, nmap SYN scans, ...)
 # still need `--user root` / extra capabilities if you reach for them.
 RUN addgroup -g 1000 shell && \
     adduser -D -u 1000 -G shell -h /home/shell -s /bin/bash shell
+
+# fzf-tab-completion: pipes bash's own tab-completion candidates (for any
+# command, not just files/history) through fzf. Needs real GNU awk/sed/grep
+# (installed above) - it's only tested against those and busybox's versions
+# of them are known to trip it up. Vendored at a pinned commit into a shared,
+# world-readable path so both the shell user and root can source it.
+RUN git clone --quiet https://github.com/lincheney/fzf-tab-completion.git /usr/local/share/fzf-tab-completion && \
+    git -C /usr/local/share/fzf-tab-completion checkout --quiet 8ba35e65bb3792759bf17c134ce04120e5940555
 
 # Copy all binaries into place
 COPY --from=builder /workspace/kubectl /usr/local/bin/
@@ -113,6 +124,8 @@ COPY --from=builder /workspace/yq /usr/local/bin/
 COPY --from=builder /workspace/fzf /usr/local/bin/
 COPY --from=builder /workspace/starship /usr/local/bin/
 COPY --from=builder /workspace/herdr /usr/local/bin/
+COPY packaging/osc52-copy /usr/local/bin/osc52-copy
+RUN chmod +x /usr/local/bin/osc52-copy
 
 USER shell
 WORKDIR /home/shell
