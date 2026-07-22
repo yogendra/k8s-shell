@@ -16,7 +16,7 @@ ARG GOVC_VERSION="v0.38.0"
 ARG STERN_VERSION="1.30.0"
 ARG YQ_VERSION="v4.44.2"
 ARG FZF_VERSION="0.55.0"
-ARG STARSHIP_VERSION="v1.20.1"
+ARG STARSHIP_VERSION="v1.26.0"
 
 RUN apk add --no-cache curl tar gzip jq ca-certificates
 
