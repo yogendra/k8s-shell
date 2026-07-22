@@ -4,7 +4,11 @@ A batteries-included, non-root container for working with Kubernetes clusters.
 It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds:
 
 - **Cluster tools**: kubectl (completion + `k` alias wired up), helm, istioctl,
-  velero, k9s, stern, yq, govc
+  velero, k9s, stern, yq, govc, and [krew](https://krew.sigs.k8s.io/) with
+  a handful of commonly used plugins pre-installed: `ctx`/`ns` (switch
+  context/namespace), `tree` (show a resource's ownership tree), `neat`
+  (strip noisy managed fields from `-o yaml`), `who-can` (RBAC lookup),
+  `view-secret`, `get-all`, `images`
 - **Image tools**: dive
 - **Shell**: bash, tmux (with [tpm](https://github.com/tmux-plugins/tpm),
   the catppuccin-tmux theme with 24-bit colour explicitly forced on (no

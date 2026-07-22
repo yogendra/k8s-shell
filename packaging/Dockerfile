@@ -79,6 +79,9 @@ RUN curl -fsSL https://herdr.dev/install.sh | HERDR_INSTALL_DIR=/workspace sh
 # -------------------------------------------------------------
 FROM nicolaka/netshoot:latest
 
+ARG TARGETARCH
+ARG KREW_VERSION="v0.5.0"
+
 LABEL org.opencontainers.image.source="https://github.com/yogendra-avgo/k8s-shell"
 LABEL org.opencontainers.image.authors="yogendrarampuria@gmail.com"
 
@@ -126,6 +129,20 @@ COPY --from=builder /workspace/starship /usr/local/bin/
 COPY --from=builder /workspace/herdr /usr/local/bin/
 COPY packaging/osc52-copy /usr/local/bin/osc52-copy
 RUN chmod +x /usr/local/bin/osc52-copy
+
+# krew - kubectl's plugin manager, plus a handful of commonly used plugins.
+# KREW_ROOT is a fixed absolute path (not under a home dir), so unlike the
+# dotfiles it doesn't need duplicating per-user - both shell and root see the
+# same install; chmod a+rX at the end so the non-root shell user can use it
+# too, since it's installed here as root.
+ENV KREW_ROOT=/usr/local/krew
+ENV PATH="${KREW_ROOT}/bin:${PATH}"
+RUN curl -fsSL "https://github.com/kubernetes-sigs/krew/releases/download/${KREW_VERSION}/krew-linux_${TARGETARCH}.tar.gz" -o /tmp/krew.tar.gz && \
+    tar -xzf /tmp/krew.tar.gz -C /tmp && \
+    /tmp/krew-linux_${TARGETARCH} install krew && \
+    rm -f /tmp/krew.tar.gz "/tmp/krew-linux_${TARGETARCH}" && \
+    kubectl krew install ctx ns tree neat who-can view-secret get-all images && \
+    chmod -R a+rX "${KREW_ROOT}"
 
 USER shell
 WORKDIR /home/shell
