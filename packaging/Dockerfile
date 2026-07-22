@@ -159,7 +159,7 @@ COPY --chown=shell:shell dotfiles/ /home/shell/
 # is vendored at build time and tmux works fully offline on first run.
 RUN mkdir -p /home/shell/.config/tmux/plugins && \
     git clone --depth 1 --quiet https://github.com/tmux-plugins/tpm.git /home/shell/.config/tmux/plugins/tpm && \
-    && rm -rf /home/shell/.config/tmux/plugins/tpm/.git \
+    rm -rf /home/shell/.config/tmux/plugins/tpm/.git \
     /home/shell/.config/tmux/plugins/tpm/bin/install_plugins
 
 USER root
