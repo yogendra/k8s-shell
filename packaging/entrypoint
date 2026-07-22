@@ -1,6 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# In-cluster kubeconfig: if a ServiceAccount is mounted (i.e. we're running as
+# a pod) and nothing has already provided a kubeconfig (a user-mounted
+# ~/.kube/config takes priority), generate one pointed at the in-cluster API
+# server. Uses tokenFile rather than a static token so kubectl/helm/k9s/stern
+# always read the current, kubelet-rotated token instead of a stale snapshot -
+# this container is meant to stay up for a long time (see k8s/deployment.yaml).
+# Runs before the command-bypass check below so it applies even when an
+# explicit command is passed (kubectl exec/debug, task smoke, ...).
+SA_DIR=/var/run/secrets/kubernetes.io/serviceaccount
+if [ -f "$SA_DIR/token" ] && [ ! -f "$HOME/.kube/config" ]; then
+  mkdir -p "$HOME/.kube"
+  NAMESPACE="$(cat "$SA_DIR/namespace" 2>/dev/null || echo default)"
+  cat > "$HOME/.kube/config" <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- name: in-cluster
+  cluster:
+    server: https://kubernetes.default.svc
+    certificate-authority: ${SA_DIR}/ca.crt
+users:
+- name: in-cluster
+  user:
+    tokenFile: ${SA_DIR}/token
+contexts:
+- name: in-cluster
+  context:
+    cluster: in-cluster
+    user: in-cluster
+    namespace: ${NAMESPACE}
+current-context: in-cluster
+EOF
+fi
+
 # Any explicit command (docker run IMAGE <cmd>, kubectl exec, task smoke, ...)
 # bypasses tmux entirely and just runs as-is.
 if [ "$#" -gt 0 ]; then

@@ -6,11 +6,12 @@ It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds
 - **Cluster tools**: kubectl (completion + `k` alias wired up), helm, istioctl,
   velero, k9s, stern, yq, govc
 - **Image tools**: dive
-- **Shell**: bash, tmux (with [tpm](https://github.com/tmux-plugins/tpm) and
-  its full plugin list - catppuccin-tmux, tmux-powerline, tmux-menus,
-  tmux-fzf, tmux-sensible/resurrect/continuum/copycat/pain-control/sidebar,
-  colors-solarized - vendored in, ready to go), fzf, starship, eza, bat, fd,
-  tree, direnv, vim, git, jq
+- **Shell**: bash, tmux (with [tpm](https://github.com/tmux-plugins/tpm),
+  the catppuccin-tmux theme with 24-bit colour explicitly forced on (no
+  Tc/RGB terminfo capability in this image otherwise, which washes out
+  the theme's colours), tmux-menus, tmux-fzf,
+  tmux-sensible/resurrect/continuum/copycat/pain-control/sidebar - vendored
+  in, ready to go), fzf, starship, eza, bat, fd, tree, direnv, vim, git, jq
 - **herdr** (AI agent terminal multiplexer)
 
 Dotfiles live in [`src/`](src) and are baked into the image at
@@ -68,9 +69,26 @@ non-privileged (non-root, no capabilities, read-only root filesystem -
 see [`k8s/deployment.yaml`](k8s/deployment.yaml) for details):
 
 ```bash
-kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/rbac.yaml -f k8s/deployment.yaml
 kubectl exec -it deploy/k8s-shell -- tmux attach -t main
 ```
+
+This Deployment runs as its own `k8s-shell-sa` ServiceAccount
+([`k8s/rbac.yaml`](k8s/rbac.yaml)), and the entrypoint generates an
+in-cluster kubeconfig from that ServiceAccount's mounted token on startup -
+`kubectl`/`helm`/`k9s`/`stern` work against `https://kubernetes.default.svc`
+with no `~/.kube/config` to mount or copy in.
+
+**`k8s/rbac.yaml` binds `k8s-shell-sa` to `cluster-admin`** via the
+`k8s-shell-crb` ClusterRoleBinding - unrestricted read/write across every
+namespace and resource in the cluster. Anyone who can `kubectl exec` into
+this pod, or read its mounted token, effectively has cluster-admin. That's
+what was asked for here, but it's not a safe default to apply blindly: for
+least-privilege, swap the ClusterRole for `view` (read-only) or `edit`
+(read/write, no RBAC/cluster-scoped changes), and/or swap the
+ClusterRoleBinding for a namespace-scoped RoleBinding. A kubeconfig you
+mount yourself at `~/.kube/config` always takes priority over the
+generated one.
 
 ## Network debugging in a restricted Kubernetes environment
 
