@@ -5,7 +5,7 @@ alias kgd="k get deploy"
 alias kgp="k get pods"
 alias kgn="k get nodes"
 alias kgs="k get svc"
-alias kge="k get events — sort-by='.metadata.creationTimestamp' |tail -8"
+alias kge="k get events --sort-by='.metadata.creationTimestamp' | tail -8"
 export nks="-n kube-system"
 export ETCDCTL_API=3
 export k8s="https://k8s.io/examples"
@@ -14,10 +14,42 @@ function vaml()
 vim -R -c 'set syntax=yaml' -;
 }
 
-# fzf - fuzzy finder (Ctrl-R history, Ctrl-T files, Alt-C cd)
+# eza - modern ls replacement
+if command -v eza >/dev/null 2>&1; then
+  alias ls='eza --icons'
+  alias l='eza -lbF --git --icons'
+  alias ll='eza -lbGF --git --icons'
+  alias llm='eza -lbGd --git --sort=modified --icons'
+  alias la='eza -lbhHigUmuSa --time-style=long-iso --git --color-scale --icons'
+  alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --icons'
+  alias lS='eza -1'
+  alias lt='eza --tree --level=2'
+  alias l.="eza -a | grep -E '^\.'"
+fi
+
+# bat - better cat
+command -v bat >/dev/null 2>&1 && alias cat='bat --paging=never'
+
+# fzf - fuzzy finder (Ctrl-R history, Ctrl-T files, Alt-C cd), fd + bat powered
 if command -v fzf >/dev/null 2>&1; then
+  export FZF_DEFAULT_OPTS="--height=40% --layout=reverse --border --padding=1 \
+--color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+--color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+--color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
+
+  if command -v fd >/dev/null 2>&1; then
+    export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  fi
+
+  command -v bat >/dev/null 2>&1 && \
+    export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range :500 {}'"
+
   eval "$(fzf --bash)"
 fi
+
+# direnv - per-directory env loading
+command -v direnv >/dev/null 2>&1 && eval "$(direnv hook bash)"
 
 # starship - shell prompt
 if command -v starship >/dev/null 2>&1; then

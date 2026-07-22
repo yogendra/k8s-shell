@@ -88,7 +88,12 @@ RUN apk add --no-cache \
     git \
     jq \
     ncurses \
-    ca-certificates
+    ca-certificates \
+    bat \
+    tree \
+    fd \
+    eza \
+    direnv
 
 # Non-root by default. Raw-socket netshoot tools (tcpdump, nmap SYN scans, ...)
 # still need `--user root` / extra capabilities if you reach for them.
@@ -115,20 +120,23 @@ ENV HOME=/home/shell
 
 # Dotfiles
 COPY --chown=shell:shell src/.bashrc src/.vimrc src/.tmux.conf /home/shell/
+RUN mkdir -p /home/shell/.config
+COPY --chown=shell:shell src/starship.toml /home/shell/.config/starship.toml
 
-# tmux plugin manager + the plugins already declared in .tmux.conf, vendored
-# at build time (pinned commits) so tmux works fully offline on first run.
+# tmux plugin manager - clone tpm itself, then run its own installer against
+# the @plugin lines already declared in .tmux.conf, so everything (tpm +
+# tmux-sensible/resurrect/continuum) is vendored at build time and tmux works
+# fully offline on first run.
 RUN mkdir -p /home/shell/.tmux/plugins && \
     git clone --quiet https://github.com/tmux-plugins/tpm.git /home/shell/.tmux/plugins/tpm && \
-    git -C /home/shell/.tmux/plugins/tpm checkout --quiet e261deb1b47614eed3400089ce7197dc68acc4eb && \
-    git clone --quiet https://github.com/tmux-plugins/tmux-sensible.git /home/shell/.tmux/plugins/tmux-sensible && \
-    git -C /home/shell/.tmux/plugins/tmux-sensible checkout --quiet 25cb91f42d020f675bb0a2ce3fbd3a5d96119efa && \
-    git clone --quiet https://github.com/tmux-plugins/tmux-resurrect.git /home/shell/.tmux/plugins/tmux-resurrect && \
-    git -C /home/shell/.tmux/plugins/tmux-resurrect checkout --quiet cff343cf9e81983d3da0c8562b01616f12e8d548 && \
-    git clone --quiet https://github.com/tmux-plugins/tmux-continuum.git /home/shell/.tmux/plugins/tmux-continuum && \
-    git -C /home/shell/.tmux/plugins/tmux-continuum checkout --quiet 0698e8f4b17d6454c71bf5212895ec055c578da0
+    /home/shell/.tmux/plugins/tpm/bin/install_plugins
 
 USER root
+
+# Give root the same shell experience for `docker run --user root` / raw-socket work.
+RUN cp -a /home/shell/.bashrc /home/shell/.vimrc /home/shell/.tmux.conf /home/shell/.config /home/shell/.tmux /root/ && \
+    chown -R root:root /root/.bashrc /root/.vimrc /root/.tmux.conf /root/.config /root/.tmux
+
 COPY packaging/entrypoint /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 USER shell
