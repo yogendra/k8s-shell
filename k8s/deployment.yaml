@@ -63,7 +63,7 @@ spec:
               mountPath: /home-writable
       containers:
         - name: k8s-shell
-          image: ghcr.io/yogendra-avgo/k8s-shell:latest
+          image: ghcr.io/yogendra-avgo/k8s-shell:latest@sha256:93043295dc1a82671ede0dd81e9767e9c878761223b5e8f25b26e46c91e6c7a7
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
