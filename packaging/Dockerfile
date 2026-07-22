@@ -79,6 +79,9 @@ RUN curl -fsSL https://herdr.dev/install.sh | HERDR_INSTALL_DIR=/workspace sh
 # -------------------------------------------------------------
 FROM nicolaka/netshoot:latest
 
+ARG TARGETARCH
+ARG KREW_VERSION="v0.5.0"
+
 LABEL org.opencontainers.image.source="https://github.com/yogendra-avgo/k8s-shell"
 LABEL org.opencontainers.image.authors="yogendrarampuria@gmail.com"
 
@@ -93,12 +96,23 @@ RUN apk add --no-cache \
     tree \
     fd \
     eza \
-    direnv
+    direnv \
+    gawk \
+    sed \
+    grep
 
 # Non-root by default. Raw-socket netshoot tools (tcpdump, nmap SYN scans, ...)
 # still need `--user root` / extra capabilities if you reach for them.
 RUN addgroup -g 1000 shell && \
     adduser -D -u 1000 -G shell -h /home/shell -s /bin/bash shell
+
+# fzf-tab-completion: pipes bash's own tab-completion candidates (for any
+# command, not just files/history) through fzf. Needs real GNU awk/sed/grep
+# (installed above) - it's only tested against those and busybox's versions
+# of them are known to trip it up. Vendored at a pinned commit into a shared,
+# world-readable path so both the shell user and root can source it.
+RUN git clone --quiet https://github.com/lincheney/fzf-tab-completion.git /usr/local/share/fzf-tab-completion && \
+    git -C /usr/local/share/fzf-tab-completion checkout --quiet 8ba35e65bb3792759bf17c134ce04120e5940555
 
 # Copy all binaries into place
 COPY --from=builder /workspace/kubectl /usr/local/bin/
@@ -113,6 +127,22 @@ COPY --from=builder /workspace/yq /usr/local/bin/
 COPY --from=builder /workspace/fzf /usr/local/bin/
 COPY --from=builder /workspace/starship /usr/local/bin/
 COPY --from=builder /workspace/herdr /usr/local/bin/
+COPY packaging/osc52-copy /usr/local/bin/osc52-copy
+RUN chmod +x /usr/local/bin/osc52-copy
+
+# krew - kubectl's plugin manager, plus a handful of commonly used plugins.
+# KREW_ROOT is a fixed absolute path (not under a home dir), so unlike the
+# dotfiles it doesn't need duplicating per-user - both shell and root see the
+# same install; chmod a+rX at the end so the non-root shell user can use it
+# too, since it's installed here as root.
+ENV KREW_ROOT=/usr/local/krew
+ENV PATH="${KREW_ROOT}/bin:${PATH}"
+RUN curl -fsSL "https://github.com/kubernetes-sigs/krew/releases/download/${KREW_VERSION}/krew-linux_${TARGETARCH}.tar.gz" -o /tmp/krew.tar.gz && \
+    tar -xzf /tmp/krew.tar.gz -C /tmp && \
+    /tmp/krew-linux_${TARGETARCH} install krew && \
+    rm -f /tmp/krew.tar.gz "/tmp/krew-linux_${TARGETARCH}" && \
+    kubectl krew install ctx ns tree neat who-can view-secret get-all images && \
+    chmod -R a+rX "${KREW_ROOT}"
 
 USER shell
 WORKDIR /home/shell

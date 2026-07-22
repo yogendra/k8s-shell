@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Copies stdin to the *client's* clipboard via an OSC 52 escape sequence,
+# instead of a system clipboard tool (pbcopy/xclip/...) that doesn't exist
+# in a headless container. Supported by most modern terminal emulators, and
+# passed through transparently by tmux and kubectl/docker exec.
+set -euo pipefail
+data="$(base64 | tr -d '\n')"
+printf '\033]52;c;%s\a' "$data" > /dev/tty

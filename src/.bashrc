@@ -1,3 +1,12 @@
+# HOME may be stale (baked in for the `shell` user) if this shell was reached
+# via `docker exec`/`kubectl exec --user root` on an already-running
+# container, which never re-runs the entrypoint's own HOME fix. Re-resolve it
+# here too so shell and root always land on their own, correct home dir.
+if REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)" && [ -n "$REAL_HOME" ] && [ "$REAL_HOME" != "$HOME" ]; then
+  export HOME="$REAL_HOME"
+  cd "$HOME" || true
+fi
+
 source <(kubectl completion bash)
 
 alias k="kubectl"
@@ -83,7 +92,26 @@ if command -v fzf >/dev/null 2>&1; then
   command -v bat >/dev/null 2>&1 && \
     export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range :500 {}'"
 
+  # Ctrl-R (history search): ctrl-y copies the selected command via OSC 52
+  # (see /usr/local/bin/osc52-copy) instead of pbcopy, which doesn't exist
+  # here. ctrl-/ and alt-t below are fzf's own default binds, not custom.
+  export FZF_CTRL_R_OPTS="--bind 'ctrl-y:execute-silent(echo -n {2..} | osc52-copy)+abort' \
+--bind '?:toggle-preview' --nth=2.. \
+--preview 'echo {}' \
+--preview-window down:50%:wrap:nohidden \
+--preview-label='| Preview |' \
+--header 'ctrl-y: copy to clipboard | ?: toggle preview | alt-t: change view | ctrl-/: toggle wrap' \
+--color header:italic"
+
   eval "$(fzf --bash)"
+fi
+
+# fzf-tab-completion - pipes ANY command's tab-completion candidates (kubectl
+# resources, git branches, file paths, ...) through fzf, not just fzf's own
+# Ctrl-R/Ctrl-T/Alt-C bindings above
+if [ -f /usr/local/share/fzf-tab-completion/bash/fzf-bash-completion.sh ]; then
+  source /usr/local/share/fzf-tab-completion/bash/fzf-bash-completion.sh
+  bind -x '"\t": fzf_bash_completion'
 fi
 
 # direnv - per-directory env loading

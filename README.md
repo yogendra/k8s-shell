@@ -4,14 +4,21 @@ A batteries-included, non-root container for working with Kubernetes clusters.
 It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds:
 
 - **Cluster tools**: kubectl (completion + `k` alias wired up), helm, istioctl,
-  velero, k9s, stern, yq, govc
+  velero, k9s, stern, yq, govc, and [krew](https://krew.sigs.k8s.io/) with
+  a handful of commonly used plugins pre-installed: `ctx`/`ns` (switch
+  context/namespace), `tree` (show a resource's ownership tree), `neat`
+  (strip noisy managed fields from `-o yaml`), `who-can` (RBAC lookup),
+  `view-secret`, `get-all`, `images`
 - **Image tools**: dive
 - **Shell**: bash, tmux (with [tpm](https://github.com/tmux-plugins/tpm),
   the catppuccin-tmux theme with 24-bit colour explicitly forced on (no
   Tc/RGB terminfo capability in this image otherwise, which washes out
   the theme's colours), tmux-menus, tmux-fzf,
   tmux-sensible/resurrect/continuum/copycat/pain-control/sidebar - vendored
-  in, ready to go), fzf, starship, eza, bat, fd, tree, direnv, vim, git, jq
+  in, ready to go), fzf (including
+  [fzf-tab-completion](https://github.com/lincheney/fzf-tab-completion) -
+  pipes tab-completion for *any* command through fzf, not just fzf's own
+  Ctrl-R/Ctrl-T/Alt-C), starship, eza, bat, fd, tree, direnv, vim, git, jq
 - **herdr** (AI agent terminal multiplexer)
 
 Dotfiles live in [`src/`](src) and are baked into the image at
@@ -23,6 +30,15 @@ typical local zsh setup. The starship prompt and tmux's catppuccin theme
 need a [Nerd Font](https://www.nerdfonts.com) in *your* terminal to render
 their icons correctly - that's a client-side setting the container can't
 provide.
+
+`kubectl` gets a `k` alias plus a full set of shortcuts (`kgp`, `kgpa`,
+`kgd`, `kdp`, `kl`/`klf`, `kex`, `kaf`, `kdel`, `kctx`/`kcuc`/`kcgc`, `kn` to
+switch namespace, ...) - tab-completion is registered for every one of
+them, not just `k`. Ctrl-R history search's `ctrl-y` copies the selected
+command to *your* clipboard via an OSC 52 escape sequence rather than
+`pbcopy` (which doesn't exist in a container) - it works through
+tmux/`docker exec`/`kubectl exec` as long as your terminal emulator
+supports OSC 52 (most modern ones do).
 
 The image runs as a non-root user (`shell`, uid 1000) by default. Netshoot's
 raw-socket tools (`tcpdump`, `nmap` SYN scans, ...) need root/`CAP_NET_RAW` -
