@@ -127,7 +127,12 @@ if command -v starship >/dev/null 2>&1; then
   eval "$(starship init bash)"
 fi
 
-# tmux - drop into a persistent session automatically on interactive shells
-if [[ -z "$TMUX" && -n "$PS1" ]] && command -v tmux >/dev/null 2>&1; then
+# tmux - drop into a persistent session automatically on interactive shells.
+# PS1 is not a reliable interactive check by itself - Alpine's /etc/profile
+# sets a default PS1 even for non-interactive login shells (e.g.
+# `bash -lc '...'`, as used by CI/task smoke), which would otherwise exec
+# straight into tmux and hard-fail with "not a terminal" when there's no tty.
+# `$-` reflects bash's real -i flag; pair it with an actual tty check too.
+if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "$TMUX" ] && command -v tmux >/dev/null 2>&1; then
   exec tmux new-session -A -s main
 fi
