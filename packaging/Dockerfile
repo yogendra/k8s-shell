@@ -60,7 +60,7 @@ RUN curl -sSL -o yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERS
     chmod +x yq
 
 # 10. fzf (fuzzy finder, wired into .bashrc via `fzf --bash`)
-RUN curl -sSL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${TARGETARCH}.tar.gz" | tar -xz fzf && \
+RUN curl -sSL "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_${TARGETARCH}.tar.gz" | tar -xz fzf && \
     chmod +x fzf
 
 # 11. Starship prompt (musl build, matches the Alpine base)
