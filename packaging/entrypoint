@@ -43,6 +43,7 @@ contexts:
     namespace: ${NAMESPACE}
 current-context: in-cluster
 EOF
+chmod 600 $HOME/.kube/config
 fi
 
 # Any explicit command (docker run IMAGE <cmd>, kubectl exec, task smoke, ...)
