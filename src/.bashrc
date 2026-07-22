@@ -13,6 +13,8 @@ fi
   export PATH="/usr/local/krew/bin:$PATH"
 
 source <(kubectl completion bash)
+command -v helm >/dev/null 2>&1 && source <(helm completion bash)
+command -v istioctl >/dev/null 2>&1 && source <(istioctl completion bash)
 
 alias k="kubectl"
 

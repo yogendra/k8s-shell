@@ -53,7 +53,12 @@ fi
 
 SESSION="${TMUX_SESSION:-main}"
 
-tmux has-session -t "$SESSION" 2>/dev/null || tmux new-session -d -s "$SESSION"
+# First run for this session: window 1 is k9s, window 2 is a plain shell.
+if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+  tmux new-session -d -s "$SESSION" -n k9s "k9s"
+  tmux new-window -t "$SESSION" -n bash
+  tmux select-window -t "$SESSION:1"
+fi
 
 # Attach if we have a real terminal (docker run -it / kubectl exec -it).
 # Otherwise keep the container (and the detached tmux session inside it)

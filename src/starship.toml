@@ -1,15 +1,17 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# No Nerd Font required: every module symbol below is plain text/standard
+# Unicode (mostly starship's own "plain-text-symbols" preset), and the
+# powerline triangle separators from the original layout are dropped since
+# those separator glyphs are themselves Nerd Font Private Use Area
+# characters (U+E0B0 range) with no plain-text equivalent - segments are
+# just colour blocks now, without a connecting arrow between them.
 format = """
-[](red)\
 $os\
 $username\
-[](bg:peach fg:red)\
 $directory\
-[](bg:yellow fg:peach)\
 $git_branch\
 $git_status\
-[](fg:yellow bg:green)\
 $c\
 $rust\
 $golang\
@@ -19,12 +21,10 @@ $java\
 $kotlin\
 $haskell\
 $python\
-[](fg:green bg:sapphire)\
 $conda\
-[$kubernetes](fg:crust bg:sapphire)\
-[](fg:sapphire bg:lavender)\
+$docker_context\
+$kubernetes\
 $time\
-[ ](fg:lavender)\
 $cmd_duration\
 $line_break\
 $character"""
@@ -37,26 +37,26 @@ disabled = false
 style = "bg:red fg:crust"
 
 [os.symbols]
-Windows = ""
-Ubuntu = "󰕈"
-SUSE = ""
-Raspbian = "󰐿"
-Mint = "󰣭"
-Macos = "󰀵"
-Manjaro = ""
-Linux = "󰌽"
-Gentoo = "󰣨"
-Fedora = "󰣛"
-Alpine = ""
-Amazon = ""
-Android = ""
-AOSC = ""
-Arch = "󰣇"
-Artix = "󰣇"
-CentOS = ""
-Debian = "󰣚"
-Redhat = "󱄛"
-RedHatEnterprise = "󱄛"
+Windows = "win "
+Ubuntu = "ubnt "
+SUSE = "suse "
+Raspbian = "rasp "
+Mint = "mint "
+Macos = "mac "
+Manjaro = "mjo "
+Linux = "lnx "
+Gentoo = "gent "
+Fedora = "fed "
+Alpine = "alp "
+Amazon = "amz "
+Android = "andr "
+AOSC = "aosc "
+Arch = "rch "
+Artix = "atx "
+CentOS = "cent "
+Debian = "deb "
+Redhat = "rhl "
+RedHatEnterprise = "rhel "
 
 [username]
 show_always = true
@@ -70,74 +70,67 @@ format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = "󰝚 "
-"Pictures" = " "
-"Developer" = "󰲋 "
-
 [git_branch]
-symbol = ""
+symbol = "git "
 style = "bg:yellow"
-format = '[[ $symbol $branch ](fg:crust bg:yellow)]($style)'
+format = '[[ $symbol$branch ](fg:crust bg:yellow)]($style)'
 
 [git_status]
 style = "bg:yellow"
 format = '[[($all_status$ahead_behind )](fg:crust bg:yellow)]($style)'
 
 [nodejs]
-symbol = ""
+symbol = "nodejs "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [c]
-symbol = " "
+symbol = "C "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [rust]
-symbol = ""
+symbol = "rs "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [golang]
-symbol = ""
+symbol = "go "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [php]
-symbol = ""
+symbol = "php "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [java]
-symbol = " "
+symbol = "java "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [kotlin]
-symbol = ""
+symbol = "kt "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [haskell]
-symbol = ""
+symbol = "haskell "
 style = "bg:green"
 format = '[[ $symbol( $version) ](fg:crust bg:green)]($style)'
 
 [python]
-symbol = ""
+symbol = "py "
 style = "bg:green"
 format = '[[ $symbol( $version)(\(#$virtualenv\)) ](fg:crust bg:green)]($style)'
 
 [docker_context]
-symbol = ""
+symbol = "docker "
 style = "bg:sapphire"
 format = '[[ $symbol( $context) ](fg:crust bg:sapphire)]($style)'
 
 [conda]
-symbol = "  "
+symbol = "conda "
 style = "fg:crust bg:sapphire"
 format = '[$symbol$environment ]($style)'
 ignore_base = false
@@ -146,7 +139,7 @@ ignore_base = false
 disabled = false
 time_format = "%R"
 style = "bg:lavender"
-format = '[[  $time ](fg:crust bg:lavender)]($style)'
+format = '[[ $time ](fg:crust bg:lavender)]($style)'
 
 [line_break]
 disabled = false
@@ -162,7 +155,7 @@ vimcmd_visual_symbol = '[❮](bold fg:yellow)'
 
 [cmd_duration]
 show_milliseconds = true
-format = " in $duration "
+format = " in $duration "
 style = "bg:lavender"
 disabled = false
 show_notifications = true
@@ -172,15 +165,6 @@ min_time_to_notify = 45000
 disabled = false
 style = "fg:crust bg:sapphire"
 format = '[$symbol$context( \($namespace\))]($style)'
-
-
-# [env_var.STARSHIP_KUBE_CTX]
-# variable = "STARSHIP_KUBE_CTX"
-# style = "bold blue"
-# symbol = "⎈ "
-# format = "$symbol$env_value"
-
-
 
 [palettes.catppuccin_mocha]
 rosewater = "#f5e0dc"
