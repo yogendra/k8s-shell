@@ -7,18 +7,20 @@ It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds
   velero, k9s, stern, yq, govc
 - **Image tools**: dive
 - **Shell**: bash, tmux (with [tpm](https://github.com/tmux-plugins/tpm) and
-  tmux-sensible/resurrect/continuum vendored in, ready to go), fzf, starship,
-  eza, bat, fd, tree, direnv, vim, git, jq
+  its full plugin list - catppuccin-tmux, tmux-powerline, tmux-menus,
+  tmux-fzf, tmux-sensible/resurrect/continuum/copycat/pain-control/sidebar,
+  colors-solarized - vendored in, ready to go), fzf, starship, eza, bat, fd,
+  tree, direnv, vim, git, jq
 - **herdr** (AI agent terminal multiplexer)
 
 Dotfiles live in [`src/`](src) and are baked into the image at
-`~/.bashrc`, `.vimrc`, `.tmux.conf`, `.config/starship.toml` - for both the
-default non-root user and root (see below), so the experience is the same
-either way. `ls`/`l`/`ll`/`la`/`lt`/... are aliased to eza, `cat` to bat, and
-fzf's file/history search is fd + bat powered, mirroring a typical local
-zsh setup. The starship prompt (Catppuccin, kubernetes context always shown)
-needs a [Nerd Font](https://www.nerdfonts.com) in *your* terminal to render
-its icons correctly - that's a client-side setting the container can't
+`~/.bashrc`, `.vimrc`, `.config/starship.toml`, `.config/tmux/tmux.conf` -
+for both the default non-root user and root (see below), so the experience
+is the same either way. `ls`/`l`/`ll`/`la`/`lt`/... are aliased to eza, `cat`
+to bat, and fzf's file/history search is fd + bat powered, mirroring a
+typical local zsh setup. The starship prompt and tmux's catppuccin theme
+need a [Nerd Font](https://www.nerdfonts.com) in *your* terminal to render
+their icons correctly - that's a client-side setting the container can't
 provide.
 
 The image runs as a non-root user (`shell`, uid 1000) by default. Netshoot's
@@ -155,7 +157,8 @@ curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/.ba
 
 curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/.vimrc >> ~/.vimrc
 
-curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/.tmux.conf >> ~/.tmux.conf
+mkdir -p ~/.config/tmux
+curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/tmux.conf -o ~/.config/tmux/tmux.conf
 
 curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/starship.toml -o ~/.config/starship.toml
 ```
