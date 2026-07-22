@@ -1,6 +1,11 @@
 # A standing, non-privileged k8s-shell you exec into on demand:
 #   kubectl apply -f k8s/deployment.yaml
-#   kubectl exec -it deploy/k8s-shell -- bash
+#   kubectl exec -it deploy/k8s-shell -- tmux attach -t main
+#
+# The image's ENTRYPOINT starts a detached tmux session and, since kubelet
+# doesn't give the container a tty, falls back to an idle keep-alive - so the
+# pod (and the tmux session inside it) stays up between exec sessions. Detach
+# with the tmux prefix + d; your work is still there next time you exec in.
 #
 # The container's home dir (dotfiles, tpm plugins) is baked into the image
 # read-only. Since the pod runs with readOnlyRootFilesystem, an initContainer
@@ -46,7 +51,6 @@ spec:
       containers:
         - name: k8s-shell
           image: ghcr.io/yogendra-avgo/k8s-shell:latest
-          command: ["sleep", "infinity"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

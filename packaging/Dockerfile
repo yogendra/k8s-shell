@@ -128,4 +128,10 @@ RUN mkdir -p /home/shell/.tmux/plugins && \
     git clone --quiet https://github.com/tmux-plugins/tmux-continuum.git /home/shell/.tmux/plugins/tmux-continuum && \
     git -C /home/shell/.tmux/plugins/tmux-continuum checkout --quiet 0698e8f4b17d6454c71bf5212895ec055c578da0
 
-CMD ["bash"]
+USER root
+COPY packaging/entrypoint /usr/local/bin/entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
+USER shell
+
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+CMD []

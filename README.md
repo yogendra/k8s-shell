@@ -20,13 +20,22 @@ run with `--user root` (Docker) or add the capability in your pod's
 
 ## Usage - Docker
 
-```bash
-# Drop into the shell
-docker run --rm -it ghcr.io/yogendra-avgo/k8s-shell
+The image's `ENTRYPOINT` is tmux itself: with no command override it
+creates (or re-attaches to) a `main` tmux session, so you always land back
+in the same place.
 
-# Mount your kubeconfig so kubectl/helm/etc. can reach a real cluster
+```bash
+# One-shot: attach straight into tmux, container dies when you detach/exit
 docker run --rm -it -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
+
+# Long-running: start it once, hop in and out over time without losing state
+docker run -d --name k8s-shell -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
+docker exec -it k8s-shell tmux attach -t main
+# <prefix>-d to detach - the container (and your session) keeps running
 ```
+
+Passing an explicit command bypasses tmux entirely, e.g.
+`docker run --rm ghcr.io/yogendra-avgo/k8s-shell kubectl version --client`.
 
 ## Usage - Kubernetes
 
@@ -34,7 +43,7 @@ One-shot pod:
 
 ```bash
 kubectl run k8s-shell --restart=Never --rm -iqt \
-  --image ghcr.io/yogendra-avgo/k8s-shell -- bash
+  --image ghcr.io/yogendra-avgo/k8s-shell
 ```
 
 - **--restart=Never**: Create a pod instead of a deployment
@@ -49,7 +58,7 @@ see [`k8s/deployment.yaml`](k8s/deployment.yaml) for details):
 
 ```bash
 kubectl apply -f k8s/deployment.yaml
-kubectl exec -it deploy/k8s-shell -- bash
+kubectl exec -it deploy/k8s-shell -- tmux attach -t main
 ```
 
 ## Using curl
