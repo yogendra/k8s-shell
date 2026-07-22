@@ -6,7 +6,8 @@ if REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)" && [ -n "$R
   export HOME="$REAL_HOME"
   cd "$HOME" || true
 fi
-
+export EDITOR=vim
+export VISUAL=vim
 # krew: the Docker-image ENV PATH addition doesn't survive a login shell -
 # Alpine's /etc/profile unconditionally resets PATH before .bashrc ever runs.
 [ -d /usr/local/krew/bin ] && [[ ":$PATH:" != *":/usr/local/krew/bin:"* ]] && \
