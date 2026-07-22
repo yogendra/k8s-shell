@@ -16,6 +16,8 @@ source <(kubectl completion bash)
 command -v helm >/dev/null 2>&1 && source <(helm completion bash)
 command -v istioctl >/dev/null 2>&1 && source <(istioctl completion bash)
 
+alias vi=vim
+
 alias k="kubectl"
 
 # get
@@ -68,18 +70,18 @@ function vaml()
 vim -R -c 'set syntax=yaml' -;
 }
 
-# eza - modern ls replacement
-if command -v eza >/dev/null 2>&1; then
-  alias ls='eza --icons'
-  alias l='eza -lbF --git --icons'
-  alias ll='eza -lbGF --git --icons'
-  alias llm='eza -lbGd --git --sort=modified --icons'
-  alias la='eza -lbhHigUmuSa --time-style=long-iso --git --color-scale --icons'
-  alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --icons'
-  alias lS='eza -1'
-  alias lt='eza --tree --level=2'
-  alias l.="eza -a | grep -E '^\.'"
-fi
+# # eza - modern ls replacement
+# if command -v eza >/dev/null 2>&1; then
+#   alias ls='eza --icons'
+#   alias l='eza -lbF --git --icons'
+#   alias ll='eza -lbGF --git --icons'
+#   alias llm='eza -lbGd --git --sort=modified --icons'
+#   alias la='eza -lbhHigUmuSa --time-style=long-iso --git --color-scale --icons'
+#   alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --icons'
+#   alias lS='eza -1'
+#   alias lt='eza --tree --level=2'
+#   alias l.="eza -a | grep -E '^\.'"
+# fi
 
 # bat - better cat
 command -v bat >/dev/null 2>&1 && alias cat='bat --paging=never'

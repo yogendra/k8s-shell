@@ -144,21 +144,22 @@ RUN curl -fsSL "https://github.com/kubernetes-sigs/krew/releases/download/${KREW
     kubectl krew install ctx ns tree neat who-can view-secret get-all images && \
     chmod -R a+rX "${KREW_ROOT}"
 
+# install carvel tools
+RUN wget -O- https://carvel.dev/install.sh  | bash
+
 USER shell
 WORKDIR /home/shell
 ENV HOME=/home/shell
 
 # Dotfiles
-COPY --chown=shell:shell src/.bashrc src/.bash_profile src/.vimrc /home/shell/
-RUN mkdir -p /home/shell/.config/tmux
-COPY --chown=shell:shell src/starship.toml /home/shell/.config/starship.toml
-COPY --chown=shell:shell src/tmux.conf /home/shell/.config/tmux/tmux.conf
+COPY --chown=shell:shell dotfiles/ /home/shell/
 
 # tmux plugin manager - clone tpm itself, then run its own installer against
 # the @plugin lines already declared in tmux.conf, so every plugin it lists
 # is vendored at build time and tmux works fully offline on first run.
 RUN mkdir -p /home/shell/.config/tmux/plugins && \
-    git clone --quiet https://github.com/tmux-plugins/tpm.git /home/shell/.config/tmux/plugins/tpm && \
+    git clone --depth 1 --quiet https://github.com/tmux-plugins/tpm.git /home/shell/.config/tmux/plugins/tpm && \
+    && rm -rf /home/shell/.config/tmux/plugins/tpm/.git \
     /home/shell/.config/tmux/plugins/tpm/bin/install_plugins
 
 USER root

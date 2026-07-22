@@ -17,20 +17,6 @@ set nowb
 set nowrap
 set linebreak
 
-set wildmode=list:longest
-set wildmenu
-set wildignore=*.o,*.obj,*~
-set wildignore+=*vim/backups*
-set wildignore+=*sass-cache*
-set wildignore+=*DS_Store*
-set wildignore+=vendor/rails/**
-set wildignore+=vendor/cache/**
-set wildignore+=*.gem
-set wildignore+=log/**
-set wildignore+=tmp/**
-set wildignore+=*.png,*.jpg,*.gif
-
-
 set scrolloff=8
 set sidescrolloff=15
 set sidescroll=1
@@ -48,3 +34,17 @@ set incsearch
 let g:netrw_liststyle=3
 syntax enable
 colorscheme evening
+
+set wildmode=list:longest
+set wildmenu
+set wildignore=*.o,*.obj,*~
+set wildignore+=*vim/backups*
+set wildignore+=*sass-cache*
+set wildignore+=*DS_Store*
+set wildignore+=vendor/rails/**
+set wildignore+=vendor/cache/**
+set wildignore+=*.gem
+set wildignore+=*.png,*.jpg,*.gif
+set wildignore+=log/**
+set wildignore+=tmp/**
+
