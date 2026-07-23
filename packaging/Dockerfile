@@ -82,20 +82,32 @@ FROM nicolaka/netshoot:latest
 ARG TARGETARCH
 ARG KREW_VERSION="v0.5.0"
 
+# Populated by the build (Taskfile.yml) from the building checkout's own git
+# remote/commit, not the tool versions above - identifies which k8s-shell
+# source built this image.
+ARG GIT_REPO="unknown"
+ARG GIT_SHA="unknown"
+ARG GIT_BRANCH="unknown"
+
 LABEL org.opencontainers.image.source="https://github.com/yogendra-avgo/k8s-shell"
 LABEL org.opencontainers.image.authors="yogendrarampuria@gmail.com"
 
 RUN apk add --no-cache \
     tmux \
     bash \
+    bash-completion \
     git \
+    git-bash-completion \
     jq \
     ncurses \
     ca-certificates \
     bat \
+    bat-bash-completion \
     tree \
     fd \
+    fd-bash-completion \
     eza \
+    eza-bash-completion \
     direnv \
     gawk \
     sed \
@@ -146,6 +158,8 @@ RUN curl -fsSL "https://github.com/kubernetes-sigs/krew/releases/download/${KREW
 
 # install carvel tools
 RUN wget -O- https://carvel.dev/install.sh  | bash
+
+RUN printf 'repo=%s\nsha=%s\nbranch=%s\n' "${GIT_REPO}" "${GIT_SHA}" "${GIT_BRANCH}" > /etc/k8s-shell-version
 
 USER shell
 WORKDIR /home/shell

@@ -13,6 +13,12 @@ export VISUAL=vim
 [ -d /usr/local/krew/bin ] && [[ ":$PATH:" != *":/usr/local/krew/bin:"* ]] && \
   export PATH="/usr/local/krew/bin:$PATH"
 
+# bash-completion: generic tab-completion framework (git, tar, ssh, ...) that
+# the tool-specific completions below build on. Alpine's package ships no
+# profile.d hook, so source it explicitly, and before those tool completions.
+[ -f /usr/share/bash-completion/bash_completion ] && \
+  source /usr/share/bash-completion/bash_completion
+
 source <(kubectl completion bash)
 command -v helm >/dev/null 2>&1 && source <(helm completion bash)
 command -v istioctl >/dev/null 2>&1 && source <(istioctl completion bash)

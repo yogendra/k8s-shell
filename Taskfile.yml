@@ -7,6 +7,14 @@ vars:
   IMAGE: 'ghcr.io/{{.REPO}}'
   TAG: latest
   PLATFORMS: linux/amd64,linux/arm64
+  GIT_REPO:
+    sh: git config --get remote.origin.url
+  GIT_SHA:
+    sh: git rev-parse HEAD
+  GIT_BRANCH:
+    # actions/checkout leaves a detached HEAD, so `git branch --show-current`
+    # is empty in CI - fall back to the ref name GitHub Actions exports.
+    sh: echo "${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
 
 tasks:
   default:
@@ -18,7 +26,7 @@ tasks:
   build:
     desc: Build the image for the native platform and load it into the local Docker daemon
     cmds:
-      - docker buildx build --load -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+      - docker buildx build --load --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
 
   smoke:
     desc: Build (if needed) and sanity-check that every bundled tool actually runs
@@ -49,7 +57,7 @@ tasks:
   push:
     desc: Build for amd64+arm64 and push straight to the registry (requires `docker login` / buildx with QEMU)
     cmds:
-      - docker buildx build --platform {{.PLATFORMS}} --push -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+      - docker buildx build --platform {{.PLATFORMS}} --push --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
 
   publish:
     desc: Alias for push, used by CI
