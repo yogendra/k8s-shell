@@ -1,3 +1,11 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-shell
+spec: {}
+status: {}
+---
 # A standing, non-privileged k8s-shell you exec into on demand:
 #   kubectl apply -f k8s/deployment.yaml
 #   kubectl exec -it deploy/k8s-shell -- tmux attach -t main
@@ -20,7 +28,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: k8s-shell
-  namespace: default
+  namespace: k8s-shell
   labels:
     app.kubernetes.io/name: k8s-shell
 spec:
@@ -43,7 +51,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: seed-home
-          image: ghcr.io/yogendra-avgo/k8s-shell:latest
+          image: ghcr.io/yogendra-avgo/k8s-shell:latest@sha256:c4c5564e5d52958b1a7e29521a2b7a1af879efe88ed1e010e0959f6f74690bb9
           command: ["sh", "-c", "cp -a /home/shell/. /home-writable/"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -55,7 +63,7 @@ spec:
               mountPath: /home-writable
       containers:
         - name: k8s-shell
-          image: ghcr.io/yogendra-avgo/k8s-shell:latest
+          image: ghcr.io/yogendra-avgo/k8s-shell:latest@sha256:c4c5564e5d52958b1a7e29521a2b7a1af879efe88ed1e010e0959f6f74690bb9
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -78,3 +86,5 @@ spec:
           emptyDir: {}
         - name: tmp
           emptyDir: {}
+
+---

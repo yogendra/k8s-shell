@@ -22,19 +22,29 @@ It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds
 - **herdr** (AI agent terminal multiplexer)
 
 Dotfiles live in [`src/`](src) and are baked into the image at
-`~/.bashrc`, `.vimrc`, `.config/starship.toml`, `.config/tmux/tmux.conf` -
-for both the default non-root user and root (see below), so the experience
-is the same either way. `ls`/`l`/`ll`/`la`/`lt`/... are aliased to eza, `cat`
-to bat, and fzf's file/history search is fd + bat powered, mirroring a
-typical local zsh setup. The starship prompt and tmux's catppuccin theme
-need a [Nerd Font](https://www.nerdfonts.com) in *your* terminal to render
-their icons correctly - that's a client-side setting the container can't
-provide.
+`~/.bashrc`, `.bash_profile`, `.vimrc`, `.config/starship.toml`,
+`.config/tmux/tmux.conf` - for both the default non-root user and root (see
+below), so the experience is the same either way. `.bash_profile` just
+sources `.bashrc`: Alpine's `/etc/profile` resets `PATH` for login shells
+before anything else runs, so without it a login shell would silently lose
+krew, aliases, and everything else in `.bashrc`. `ls`/`l`/`ll`/`la`/`lt`/...
+are aliased to eza, `cat` to bat, and fzf's file/history search is fd + bat
+powered, mirroring a typical local zsh setup.
 
-`kubectl` gets a `k` alias plus a full set of shortcuts (`kgp`, `kgpa`,
-`kgd`, `kdp`, `kl`/`klf`, `kex`, `kaf`, `kdel`, `kctx`/`kcuc`/`kcgc`, `kn` to
-switch namespace, ...) - tab-completion is registered for every one of
-them, not just `k`. Ctrl-R history search's `ctrl-y` copies the selected
+Neither the starship prompt nor tmux's catppuccin theme need a
+[Nerd Font](https://www.nerdfonts.com) - every icon is a plain-text/standard
+Unicode equivalent instead (starship's official
+[`plain-text-symbols`](https://starship.rs/presets/plain-text-symbols)
+preset, and a `status-right` override for catppuccin-tmux's window/session
+segments, which hardcode Nerd Font glyphs with no config option to remove
+them). A brand-new tmux session opens with `k9s` in window 1 and a plain
+shell in window 2.
+
+`kubectl`/`helm`/`istioctl` all get bash completion. `kubectl` additionally
+gets a `k` alias plus a full set of shortcuts (`kgp`, `kgpa`, `kgd`, `kdp`,
+`kl`/`klf`, `kex`, `kaf`, `kdel`, `kctx`/`kcuc`/`kcgc`, `kn` to switch
+namespace, ...) - tab-completion is registered for every one of them, not
+just `k`. Ctrl-R history search's `ctrl-y` copies the selected
 command to *your* clipboard via an OSC 52 escape sequence rather than
 `pbcopy` (which doesn't exist in a container) - it works through
 tmux/`docker exec`/`kubectl exec` as long as your terminal emulator

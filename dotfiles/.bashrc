@@ -6,8 +6,18 @@ if REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)" && [ -n "$R
   export HOME="$REAL_HOME"
   cd "$HOME" || true
 fi
+export EDITOR=vim
+export VISUAL=vim
+# krew: the Docker-image ENV PATH addition doesn't survive a login shell -
+# Alpine's /etc/profile unconditionally resets PATH before .bashrc ever runs.
+[ -d /usr/local/krew/bin ] && [[ ":$PATH:" != *":/usr/local/krew/bin:"* ]] && \
+  export PATH="/usr/local/krew/bin:$PATH"
 
 source <(kubectl completion bash)
+command -v helm >/dev/null 2>&1 && source <(helm completion bash)
+command -v istioctl >/dev/null 2>&1 && source <(istioctl completion bash)
+
+alias vi=vim
 
 alias k="kubectl"
 
@@ -61,18 +71,18 @@ function vaml()
 vim -R -c 'set syntax=yaml' -;
 }
 
-# eza - modern ls replacement
-if command -v eza >/dev/null 2>&1; then
-  alias ls='eza --icons'
-  alias l='eza -lbF --git --icons'
-  alias ll='eza -lbGF --git --icons'
-  alias llm='eza -lbGd --git --sort=modified --icons'
-  alias la='eza -lbhHigUmuSa --time-style=long-iso --git --color-scale --icons'
-  alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --icons'
-  alias lS='eza -1'
-  alias lt='eza --tree --level=2'
-  alias l.="eza -a | grep -E '^\.'"
-fi
+# # eza - modern ls replacement
+# if command -v eza >/dev/null 2>&1; then
+#   alias ls='eza --icons'
+#   alias l='eza -lbF --git --icons'
+#   alias ll='eza -lbGF --git --icons'
+#   alias llm='eza -lbGd --git --sort=modified --icons'
+#   alias la='eza -lbhHigUmuSa --time-style=long-iso --git --color-scale --icons'
+#   alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --icons'
+#   alias lS='eza -1'
+#   alias lt='eza --tree --level=2'
+#   alias l.="eza -a | grep -E '^\.'"
+# fi
 
 # bat - better cat
 command -v bat >/dev/null 2>&1 && alias cat='bat --paging=never'
@@ -122,7 +132,12 @@ if command -v starship >/dev/null 2>&1; then
   eval "$(starship init bash)"
 fi
 
-# tmux - drop into a persistent session automatically on interactive shells
-if [[ -z "$TMUX" && -n "$PS1" ]] && command -v tmux >/dev/null 2>&1; then
+# tmux - drop into a persistent session automatically on interactive shells.
+# PS1 is not a reliable interactive check by itself - Alpine's /etc/profile
+# sets a default PS1 even for non-interactive login shells (e.g.
+# `bash -lc '...'`, as used by CI/task smoke), which would otherwise exec
+# straight into tmux and hard-fail with "not a terminal" when there's no tty.
+# `$-` reflects bash's real -i flag; pair it with an actual tty check too.
+if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "$TMUX" ] && command -v tmux >/dev/null 2>&1; then
   exec tmux new-session -A -s main
 fi
