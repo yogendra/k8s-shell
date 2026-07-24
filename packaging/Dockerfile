@@ -1,9 +1,9 @@
 FROM alpine:3.20 AS builder
-
 ARG TARGETARCH
 
 LABEL org.opencontainers.image.source="https://github.com/yogendra-avgo/k8s-shell"
 LABEL org.opencontainers.image.authors="yogendrarampuria@gmail.com"
+LABEL org.opencontainers.image.description "Batteries included Kubernete shell for operating and troubleshooting"
 
 # Tool Version Matrix
 ARG KUBECTL_VERSION="v1.30.2"

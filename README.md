@@ -1,4 +1,5 @@
 # Kubernetes Shell
+![alt text](image.png)
 
 A batteries-included, non-root container for working with Kubernetes clusters.
 It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds:
