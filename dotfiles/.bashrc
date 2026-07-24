@@ -138,12 +138,17 @@ if command -v starship >/dev/null 2>&1; then
   eval "$(starship init bash)"
 fi
 
-# tmux - drop into a persistent session automatically on interactive shells.
-# PS1 is not a reliable interactive check by itself - Alpine's /etc/profile
-# sets a default PS1 even for non-interactive login shells (e.g.
-# `bash -lc '...'`, as used by CI/task smoke), which would otherwise exec
-# straight into tmux and hard-fail with "not a terminal" when there's no tty.
-# `$-` reflects bash's real -i flag; pair it with an actual tty check too.
-if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "$TMUX" ] && command -v tmux >/dev/null 2>&1; then
-  exec tmux new-session -A -s main
+# The multiplexer (tmux or herdr, see K8S_MUX) is only auto-started/attached
+# by the entrypoint for the container's own foreground process. A shell
+# reached via `docker exec`/`kubectl exec` runs this file too but is left as
+# a plain shell instead of also auto-attaching, so it doesn't fight the
+# entrypoint's own client over the same session - point out how to join that
+# session instead, so it isn't a dead end. Skipped when already inside tmux
+# ($TMUX) or herdr ($HERDR_ENV), so panes/windows opened from within the
+# session itself don't print this on every new shell.
+if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${TMUX:-}" ] && [ -z "${HERDR_ENV:-}" ]; then
+  case "${K8S_MUX:-herdr}" in
+  tmux) echo "tip: run 'tmux attach -t ${TMUX_SESSION:-main}' to join the persistent session" >&2 ;;
+  herdr) echo "tip: run 'herdr session attach ${HERDR_SESSION:-main}' to join the persistent session" >&2 ;;
+  esac
 fi

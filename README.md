@@ -19,7 +19,9 @@ It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds
   [fzf-tab-completion](https://github.com/lincheney/fzf-tab-completion) -
   pipes tab-completion for *any* command through fzf, not just fzf's own
   Ctrl-R/Ctrl-T/Alt-C), starship, eza, bat, fd, tree, direnv, vim, git, jq
-- **herdr** (AI agent terminal multiplexer)
+- **herdr** (AI agent terminal multiplexer) - the default multiplexer the
+  entrypoint starts/attaches; set `K8S_MUX=tmux` to use tmux instead (see
+  [Usage - Docker](#usage---docker))
 
 Dotfiles live in [`src/`](src) and are baked into the image at
 `~/.bashrc`, `.bash_profile`, `.vimrc`, `.config/starship.toml`,
@@ -37,8 +39,8 @@ Unicode equivalent instead (starship's official
 [`plain-text-symbols`](https://starship.rs/presets/plain-text-symbols)
 preset, and a `status-right` override for catppuccin-tmux's window/session
 segments, which hardcode Nerd Font glyphs with no config option to remove
-them). A brand-new tmux session opens with `k9s` in window 1 and a plain
-shell in window 2.
+them). A brand-new session (herdr or tmux) opens with `k9s` in the first
+tab/window and a plain shell in the second.
 
 `kubectl`/`helm`/`istioctl` all get bash completion. `kubectl` additionally
 gets a `k` alias plus a full set of shortcuts (`kgp`, `kgpa`, `kgd`, `kdp`,
@@ -46,33 +48,44 @@ gets a `k` alias plus a full set of shortcuts (`kgp`, `kgpa`, `kgd`, `kdp`,
 namespace, ...) - tab-completion is registered for every one of them, not
 just `k`. Ctrl-R history search's `ctrl-y` copies the selected
 command to *your* clipboard via an OSC 52 escape sequence rather than
-`pbcopy` (which doesn't exist in a container) - it works through
-tmux/`docker exec`/`kubectl exec` as long as your terminal emulator
+`pbcopy` (which doesn't exist in a container) - it works through the
+multiplexer/`docker exec`/`kubectl exec` as long as your terminal emulator
 supports OSC 52 (most modern ones do).
 
 The image runs as a non-root user (`shell`, uid 1000) by default. Netshoot's
 raw-socket tools (`tcpdump`, `nmap` SYN scans, ...) need root/`CAP_NET_RAW` -
 run with `--user root` (Docker) or add the capability in your pod's
 `securityContext` if you need those; root gets the identical dotfiles/prompt/
-tmux setup too.
+multiplexer setup too.
 
 ## Usage - Docker
 
-The image's `ENTRYPOINT` is tmux itself: with no command override it
-creates (or re-attaches to) a `main` tmux session, so you always land back
-in the same place.
+The image's `ENTRYPOINT` starts (or re-attaches to) a `main` multiplexer
+session when run with no command override, so you always land back in the
+same place. **herdr is the default** - set `K8S_MUX=tmux` to use tmux
+instead.
 
 ```bash
-# One-shot: attach straight into tmux, container dies when you detach/exit
+# One-shot: attach straight into the multiplexer, container dies when you detach/exit
 docker run --rm -it -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
+
+# ...or explicitly pick tmux instead of the herdr default
+docker run --rm -it -e K8S_MUX=tmux -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
 
 # Long-running: start it once, hop in and out over time without losing state
 docker run -d --name k8s-shell -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
-docker exec -it k8s-shell tmux attach -t main
-# <prefix>-d to detach - the container (and your session) keeps running
+docker exec -it k8s-shell herdr session attach main
+# <prefix>-q to detach (herdr's default prefix is ctrl-b, same as tmux's) -
+# the container (and your session) keeps running
 ```
 
-Passing an explicit command bypasses tmux entirely, e.g.
+A plain `docker exec -it k8s-shell bash` drops you into an ordinary shell
+instead of auto-attaching to the multiplexer - only the container's own
+foreground process attaches automatically. That shell prints a one-line tip
+with the exact `tmux attach`/`herdr session attach` command to run if you
+want to join the persistent session from there.
+
+Passing an explicit command bypasses the multiplexer entirely, e.g.
 `docker run --rm ghcr.io/yogendra-avgo/k8s-shell kubectl version --client`.
 
 ## Usage - Kubernetes
@@ -96,7 +109,8 @@ see [`k8s/deployment.yaml`](k8s/deployment.yaml) for details):
 
 ```bash
 kubectl apply -f k8s/rbac.yaml -f k8s/deployment.yaml
-kubectl exec -it deploy/k8s-shell -- tmux attach -t main
+kubectl exec -it deploy/k8s-shell -- herdr session attach main
+# ...or, with K8S_MUX=tmux set on the Deployment: kubectl exec -it deploy/k8s-shell -- tmux attach -t main
 ```
 
 This Deployment runs as its own `k8s-shell-sa` ServiceAccount

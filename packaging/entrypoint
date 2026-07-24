@@ -4,9 +4,10 @@ set -euo pipefail
 # HOME is baked into the image for the default `shell` user (uid 1000). Under
 # `docker run --user root` (or any other uid) that stale value would still be
 # "/home/shell" - Docker doesn't recompute it from --user - so everything
-# below (and the shell/prompt/tmux config, which is identical for shell and
-# root) would silently read/write the wrong home directory. Resolve it fresh
-# from /etc/passwd for whichever uid is actually running this container.
+# below (and the shell/prompt/multiplexer config, which is identical for
+# shell and root) would silently read/write the wrong home directory.
+# Resolve it fresh from /etc/passwd for whichever uid is actually running
+# this container.
 if REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)" && [ -n "$REAL_HOME" ]; then
   export HOME="$REAL_HOME"
 fi
@@ -47,20 +48,89 @@ chmod 600 $HOME/.kube/config
 fi
 
 # Any explicit command (docker run IMAGE <cmd>, kubectl exec, task smoke, ...)
-# bypasses tmux entirely and just runs as-is.
+# bypasses the multiplexer entirely and just runs as-is. This is also what
+# makes `docker exec`/`kubectl exec ... -- bash` (or any other explicit
+# command) drop straight into a plain shell instead of the multiplexer.
 if [ "$#" -gt 0 ]; then
   exec "$@"
 fi
 
-SESSION="${TMUX_SESSION:-main}"
+# K8S_MUX picks the multiplexer this entrypoint starts/attaches for the
+# no-command case above (a bare `docker run`/`kubectl run` with a tty).
+# herdr is the default; set K8S_MUX=tmux to fall back to the tmux-based
+# setup this image used previously.
+MUX="${K8S_MUX:-herdr}"
 
-# First run for this session: window 1 is k9s, window 2 is a plain shell.
-if ! tmux has-session -t "$SESSION" 2>/dev/null; then
-  tmux new-session -d -s "$SESSION" -n k9s "k9s"
-  tmux new-window -t "$SESSION" -n bash
-  tmux select-window -t "$SESSION:1"
-fi
+case "$MUX" in
+tmux)
+  SESSION="${TMUX_SESSION:-main}"
 
+  # First run for this session: window 1 is k9s, window 2 is a plain shell.
+  if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+    tmux new-session -d -s "$SESSION" -n k9s "k9s"
+    tmux new-window -t "$SESSION" -n bash
+    tmux select-window -t "$SESSION:1"
+  fi
 
+  # Attach if we have a real terminal (docker run -it / kubectl run -it).
+  # Otherwise keep the container (and the detached tmux session inside it)
+  # alive so it can be attached to later.
+  if [ -t 0 ] && [ -t 1 ]; then
+    exec tmux attach-session -t "$SESSION"
+  fi
 
-exec tail -f /dev/null
+  exec tail -f /dev/null
+  ;;
+
+herdr)
+  SESSION="${HERDR_SESSION:-main}"
+
+  # Fresh containers never have this session running already - this only
+  # matters if the entrypoint somehow runs more than once against the same
+  # $HOME (e.g. a persisted volume across restarts).
+  FRESH_SESSION=1
+  herdr session list --json 2>/dev/null | jq -e --arg s "$SESSION" \
+    '.sessions[]? | select(.name == $s and .running == true)' >/dev/null 2>&1 &&
+    FRESH_SESSION=0
+
+  # `herdr --session NAME server` binds to that session's own socket and
+  # runs headless - unlike `herdr session attach`, it never tries to draw a
+  # TUI, so it works with no tty (Kubernetes gives none at pod start).
+  # Backgrounding it here lets us both provision the initial workspace over
+  # the socket API below and use it as the keep-alive process for the
+  # no-tty case at the bottom of this script.
+  herdr --session "$SESSION" server &
+
+  # Wait for the session's socket API to come up.
+  for _ in $(seq 1 50); do
+    HERDR_SESSION="$SESSION" herdr workspace list >/dev/null 2>&1 && break
+    sleep 0.1
+  done
+
+  # First run for this session: tab 1 is k9s, tab 2 is a plain shell.
+  if [ "$FRESH_SESSION" = 1 ]; then
+    WORKSPACE_JSON="$(HERDR_SESSION="$SESSION" herdr workspace create --label "$SESSION")"
+    TAB1_ID="$(jq -r '.result.tab.tab_id' <<<"$WORKSPACE_JSON")"
+    PANE1_ID="$(jq -r '.result.root_pane.pane_id' <<<"$WORKSPACE_JSON")"
+    WORKSPACE_ID="$(jq -r '.result.workspace.workspace_id' <<<"$WORKSPACE_JSON")"
+
+    HERDR_SESSION="$SESSION" herdr tab rename "$TAB1_ID" k9s >/dev/null
+    HERDR_SESSION="$SESSION" herdr pane run "$PANE1_ID" k9s >/dev/null
+    HERDR_SESSION="$SESSION" herdr tab create --workspace "$WORKSPACE_ID" --label bash --no-focus >/dev/null
+  fi
+
+  # Attach if we have a real terminal (docker run -it / kubectl run -it).
+  # Otherwise keep the container (and the detached herdr session inside it)
+  # alive so it can be attached to later.
+  if [ -t 0 ] && [ -t 1 ]; then
+    exec herdr session attach "$SESSION"
+  fi
+
+  exec tail -f /dev/null
+  ;;
+
+*)
+  echo "entrypoint: unknown K8S_MUX '$MUX' (expected 'tmux' or 'herdr')" >&2
+  exit 1
+  ;;
+esac
