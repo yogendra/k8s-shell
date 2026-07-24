@@ -61,6 +61,8 @@ jobs:
         run: task publish IMAGE=ghcr.io/${{ github.repository }} TAG=latest
       - name: Publish :sha-<short-sha>
         run: task publish IMAGE=ghcr.io/${{ github.repository }} TAG=sha-${{ github.sha }}
+      - name: Publish :<date-tag>
+        run: task publish IMAGE=ghcr.io/${{ github.repository }} TAG=$(date -u +%Y%m%d-%H%M)
       - name: Get published digest
         if: github.ref == 'refs/heads/main'
         id: digest
