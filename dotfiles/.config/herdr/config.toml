@@ -1,0 +1,14 @@
+onboarding = false
+
+[ui]
+show_agent_labels_on_pane_borders = true
+
+[ui.toast]
+delivery = "herdr"
+
+[experimental]
+pane_history = false
+
+[theme]
+name = "nord"
+auto_switch = false
