@@ -111,7 +111,9 @@ RUN apk add --no-cache \
     direnv \
     gawk \
     sed \
-    grep
+    grep \
+    openldap-clients
+
 
 # Non-root by default. Raw-socket netshoot tools (tcpdump, nmap SYN scans, ...)
 # still need `--user root` / extra capabilities if you reach for them.
