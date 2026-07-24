@@ -74,3 +74,15 @@ tasks:
       git commit -m "{{.MSG}}"
       git pull --rebase
       git push
+  lab:deploy:
+    vars:
+      LAB_CONTEXT: '{{.CTX | default "lab"}}'
+    cmds:
+    - |
+      kubectl --context {{.LAB_CONTEXT}} apply  -f k8s/
+  lab:connect:
+    vars:
+      LAB_CONTEXT: '{{.CTX | default "lab"}}'
+    cmds:
+    - |
+      kubectl --context {{.LAB_CONTEXT}} exec -it -n k8s-shell deployments/k8s-shell -c k8s-shell -- bash
