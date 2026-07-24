@@ -74,6 +74,16 @@ tasks:
       git commit -m "{{.MSG}}"
       git pull --rebase
       git push
+  git-tag:
+    vars:
+      DATE_TAG: 
+        sh: date +%Y-%m-%d 
+      GIT_TAG: "v{{.GIT_TAG | default .DATE_TAG}}"
+    cmds:
+    - | 
+      echo "Creating git tag for release"
+      git tag "{{.GIT_TAG}}"
+      git push --tags
   lab:deploy:
     vars:
       LAB_CONTEXT: '{{.CTX | default "lab"}}'
