@@ -61,11 +61,6 @@ if ! tmux has-session -t "$SESSION" 2>/dev/null; then
   tmux select-window -t "$SESSION:1"
 fi
 
-# Attach if we have a real terminal (docker run -it / kubectl exec -it).
-# Otherwise keep the container (and the detached tmux session inside it)
-# alive so it can be attached to later.
-if [ -t 0 ] && [ -t 1 ]; then
-  exec tmux attach-session -t "$SESSION"
-fi
+
 
 exec tail -f /dev/null
