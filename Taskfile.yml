@@ -64,3 +64,11 @@ tasks:
     desc: Alias for push, used by CI
     cmds:
       - task: push
+
+  git-acpp:
+    vars:
+      MSG: '{{.MSG | default  "sync"}}'
+    cmds:
+    - |
+      git add . 
+      git commit -m "synch" ; git pull --rebase; git push

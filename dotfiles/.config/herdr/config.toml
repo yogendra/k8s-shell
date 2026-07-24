@@ -15,3 +15,4 @@ auto_switch = false
 
 [terminal]
 shell_mode = "login"
+default_shell = "/bin/bash"
