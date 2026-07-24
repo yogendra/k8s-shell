@@ -1,27 +1,14 @@
-# HOME may be stale (baked in for the `shell` user) if this shell was reached
-# via `docker exec`/`kubectl exec --user root` on an already-running
-# container, which never re-runs the entrypoint's own HOME fix. Re-resolve it
-# here too so shell and root always land on their own, correct home dir.
 if REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)" && [ -n "$REAL_HOME" ] && [ "$REAL_HOME" != "$HOME" ]; then
   export HOME="$REAL_HOME"
   cd "$HOME" || true
 fi
 export EDITOR=vim
 export VISUAL=vim
-# krew: the Docker-image ENV PATH addition doesn't survive a login shell -
-# Alpine's /etc/profile unconditionally resets PATH before .bashrc ever runs.
+
 [ -d /usr/local/krew/bin ] && [[ ":$PATH:" != *":/usr/local/krew/bin:"* ]] && \
   export PATH="/usr/local/krew/bin:$PATH"
-
-# bash-completion: generic tab-completion framework (git, tar, ssh, ...) that
-# the tool-specific completions below build on. Alpine's package ships no
-# profile.d hook, so source it explicitly, and before those tool completions.
 [ -f /usr/share/bash-completion/bash_completion ] && \
   source /usr/share/bash-completion/bash_completion
-
-source <(kubectl completion bash)
-command -v helm >/dev/null 2>&1 && source <(helm completion bash)
-command -v istioctl >/dev/null 2>&1 && source <(istioctl completion bash)
 
 alias vi=vim
 
@@ -77,18 +64,6 @@ function vaml()
 vim -R -c 'set syntax=yaml' -;
 }
 
-# # eza - modern ls replacement
-# if command -v eza >/dev/null 2>&1; then
-#   alias ls='eza --icons'
-#   alias l='eza -lbF --git --icons'
-#   alias ll='eza -lbGF --git --icons'
-#   alias llm='eza -lbGd --git --sort=modified --icons'
-#   alias la='eza -lbhHigUmuSa --time-style=long-iso --git --color-scale --icons'
-#   alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --icons'
-#   alias lS='eza -1'
-#   alias lt='eza --tree --level=2'
-#   alias l.="eza -a | grep -E '^\.'"
-# fi
 alias vi=vim
 
 # bat - better cat
@@ -123,9 +98,7 @@ if command -v fzf >/dev/null 2>&1; then
   eval "$(fzf --bash)"
 fi
 
-# fzf-tab-completion - pipes ANY command's tab-completion candidates (kubectl
-# resources, git branches, file paths, ...) through fzf, not just fzf's own
-# Ctrl-R/Ctrl-T/Alt-C bindings above
+
 if [ -f /usr/local/share/fzf-tab-completion/bash/fzf-bash-completion.sh ]; then
   source /usr/local/share/fzf-tab-completion/bash/fzf-bash-completion.sh
   bind -x '"\t": fzf_bash_completion'
@@ -139,14 +112,6 @@ if command -v starship >/dev/null 2>&1; then
   eval "$(starship init bash)"
 fi
 
-# The multiplexer (tmux or herdr, see K8S_MUX) is only auto-started/attached
-# by the entrypoint for the container's own foreground process. A shell
-# reached via `docker exec`/`kubectl exec` runs this file too but is left as
-# a plain shell instead of also auto-attaching, so it doesn't fight the
-# entrypoint's own client over the same session - point out how to join that
-# session instead, so it isn't a dead end. Skipped when already inside tmux
-# ($TMUX) or herdr ($HERDR_ENV), so panes/windows opened from within the
-# session itself don't print this on every new shell.
 if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${TMUX:-}" ] && [ -z "${HERDR_ENV:-}" ]; then
   case "${K8S_MUX:-herdr}" in
   tmux) echo "tip: run 'tmux attach -t ${TMUX_SESSION:-default}' to join the persistent session" >&2 ;;
