@@ -149,7 +149,7 @@ fi
 # session itself don't print this on every new shell.
 if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${TMUX:-}" ] && [ -z "${HERDR_ENV:-}" ]; then
   case "${K8S_MUX:-herdr}" in
-  tmux) echo "tip: run 'tmux attach -t ${TMUX_SESSION:-main}' to join the persistent session" >&2 ;;
-  herdr) echo "tip: run 'herdr session attach ${HERDR_SESSION:-main}' to join the persistent session" >&2 ;;
+  tmux) echo "tip: run 'tmux attach -t ${TMUX_SESSION:-default}' to join the persistent session" >&2 ;;
+  herdr) echo "tip: run 'herdr session attach ${HERDR_SESSION:-default}' to join the persistent session" >&2 ;;
   esac
 fi
