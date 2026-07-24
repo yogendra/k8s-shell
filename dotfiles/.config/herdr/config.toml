@@ -10,5 +10,5 @@ delivery = "herdr"
 pane_history = false
 
 [theme]
-name = "nord"
+name = "solarized"
 auto_switch = false
