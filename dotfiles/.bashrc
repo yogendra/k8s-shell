@@ -70,7 +70,7 @@ complete -F __start_kubectl k kg kgp kgpa kgpw kgd kgs kgn kgns kge \
   kd kdp kdd kds kl klf kex kaf kdel kctx kcuc kcgc kn
 
 export nks="-n kube-system"
-export ETCDCTL_API=3
+
 export k8s="https://k8s.io/examples"
 function vaml()
 {
@@ -89,6 +89,7 @@ vim -R -c 'set syntax=yaml' -;
 #   alias lt='eza --tree --level=2'
 #   alias l.="eza -a | grep -E '^\.'"
 # fi
+alias vi=vim
 
 # bat - better cat
 command -v bat >/dev/null 2>&1 && alias cat='bat --paging=never'

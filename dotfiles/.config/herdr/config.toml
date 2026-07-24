@@ -12,3 +12,6 @@ pane_history = false
 [theme]
 name = "solarized"
 auto_switch = false
+
+[terminal]
+shell_mode = "login"

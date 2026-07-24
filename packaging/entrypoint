@@ -63,7 +63,7 @@ MUX="${K8S_MUX:-herdr}"
 
 case "$MUX" in
 tmux)
-  SESSION="${TMUX_SESSION:-main}"
+  SESSION="${TMUX_SESSION:-default}"
 
   # First run for this session: window 1 is k9s, window 2 is a plain shell.
   if ! tmux has-session -t "$SESSION" 2>/dev/null; then
@@ -83,7 +83,7 @@ tmux)
   ;;
 
 herdr)
-  SESSION="${HERDR_SESSION:-main}"
+  SESSION="${HERDR_SESSION:-default}"
 
   # Fresh containers never have this session running already - this only
   # matters if the entrypoint somehow runs more than once against the same
