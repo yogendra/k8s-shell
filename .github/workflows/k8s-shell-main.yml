@@ -67,7 +67,7 @@ jobs:
           DATE=$(date +'%Y%m')
           
           # Combine into the requested format
-          TAG="v${DATE}-${{ github.run_id }}-${{ github.run_attempt }}"
+          TAG="v${DATE}-${{ github.run_number }}-${{ github.run_attempt }}"
           
           # Save to GITHUB_ENV so subsequent steps can use it
           echo "IMGTAG=$TAG" >> $GITHUB_ENV
