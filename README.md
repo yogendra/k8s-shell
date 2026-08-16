@@ -1,6 +1,7 @@
 # k8s-shell: Container Toolbox for Working with VCF
 
 k8s-shell : [![Build and Publish](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-shell-main.yml/badge.svg)](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-shell-main.yml)
+
 k8s-gui-shell : [![Build and Publish (GUI)](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-gui-shell-main.yml/badge.svg)](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-gui-shell-main.yml)
 
 Batteries-included container images for operating and troubleshooting
