@@ -118,3 +118,4 @@ if [[ $- == *i* ]] && [ -t 0 ] && [ -t 1 ] && [ -z "${TMUX:-}" ] && [ -z "${HERD
   herdr) echo "tip: run 'herdr session attach ${HERDR_SESSION:-default}' to join the persistent session" >&2 ;;
   esac
 fi
+export PATH=:$HOME/bin:$HOME/.local/bin:$PATH

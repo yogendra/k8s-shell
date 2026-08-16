@@ -1,0 +1,9 @@
+# k8s-gui-shell only: sets FiraCode Nerd Font Mono (installed by
+# install-nerd-font.sh) as xfce4-terminal's default font, so the desktop's
+# terminal app renders the Pastel Powerline starship theme's glyphs and
+# separators without the user having to open Preferences first. Only the
+# keys that differ from xfce4-terminal's own built-in defaults are listed
+# here - everything else (colors, cursor, tabs, ...) falls back to those.
+[Configuration]
+FontName=FiraCode Nerd Font Mono 11
+FontUseSystem=FALSE

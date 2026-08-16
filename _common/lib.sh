@@ -60,16 +60,23 @@ fetch_bin() {
 # Downloads a tarball to a temp file, verifies it, then extracts with
 # whatever extra tar args the caller needs (e.g. --strip-components=1, or an
 # explicit member to pull a single binary out of a multi-file archive).
+# Decompression flag is picked from the URL's own extension - every caller so
+# far has been .tar.gz, but Nerd Fonts' release assets (k8s-gui-shell only)
+# are .tar.xz.
 fetch_tar() {
   local url="$1" expected="$2" out_dir="$3"
   shift 3
-  local tmp
+  local tmp tar_flag
   tmp="$(mktemp)"
+  case "$url" in
+  *.tar.xz) tar_flag=-xJf ;;
+  *) tar_flag=-xzf ;;
+  esac
   log "fetching $url"
   curl -fsSL "$url" -o "$tmp"
   verify_sha256 "$tmp" "$expected"
   mkdir -p "$out_dir"
-  tar -xzf "$tmp" -C "$out_dir" "$@"
+  tar "$tar_flag" "$tmp" -C "$out_dir" "$@"
   rm -f "$tmp"
 }
 

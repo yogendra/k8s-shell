@@ -17,5 +17,6 @@ apt_install \
   tar \
   gzip \
   unzip \
-  vim
+  vim \
+  xz-utils
 apt_cleanup

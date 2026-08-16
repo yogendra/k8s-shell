@@ -47,6 +47,7 @@ RUN TARGETARCH=$TARGETARCH /opt/build/common/install-network-tools.sh
 RUN /opt/build/common/install-shell-experience.sh
 RUN /opt/build/common/install-k8s-tools.sh
 RUN /opt/build/common/install-vcf-cli.sh
+RUN curl -sSLf https://zed.dev/install.sh | SHELL=/bin/bash sh
 
 # Binaries with no apt equivalent (see _common/fetch-binaries.sh) + krew's
 # bootstrapped install.
@@ -54,6 +55,7 @@ COPY --from=builder /workspace/out/bin/ /usr/local/bin/
 COPY --from=builder /usr/local/krew/ /usr/local/krew/
 ENV KREW_ROOT=/usr/local/krew
 ENV PATH="${KREW_ROOT}/bin:${PATH}"
+
 RUN chmod -R a+rX "${KREW_ROOT}" && \
     kubectl krew install ctx ns tree neat who-can view-secret get-all images
 
@@ -75,17 +77,38 @@ RUN usermod -aG wireshark abc
 
 RUN printf 'repo=%s\nsha=%s\nbranch=%s\n' "${GIT_REPO}" "${GIT_SHA}" "${GIT_BRANCH}" > /etc/k8s-shell-version
 
-# Root profile / abc profile: same dotfiles bundle as k8s-shell, installed
-# independently into each home so whichever terminal app is opened inside the
-# desktop gets the same shell/prompt experience (including `sudo su`/root
-# logins). Chowned by username (not a hardcoded uid) since webtop remaps
-# abc's uid/gid from PUID/PGID at runtime, after these files are already
-# baked in. Also seeded into /etc/skel so any additional user created later
-# (manually, or by a future multi-user desktop setup) gets the same bundle
-# via `useradd -m` without needing this Dockerfile to know its name.
+# Root profile: same dotfiles bundle as k8s-shell, so `sudo su`/root logins
+# get the same shell/prompt experience. Also seeded into /etc/skel - both so
+# any additional user created later (manually, or by a future multi-user
+# desktop setup) gets the same bundle via `useradd -m` for free, AND as the
+# source 00-init-config-home.sh copies from into /config at container start.
+# Deliberately NOT installed straight into /config here: it's a declared
+# VOLUME in the upstream webtop image, so anything baked in at build time
+# would carry build-time abc ownership (911:911, before any PUID/PGID
+# override) into whatever volume gets mounted there at runtime - the same
+# problem the upstream image sidesteps by rm -rf'ing /config/.cache right
+# before its own VOLUME line. Populating /config at container start instead,
+# once abc's real uid/gid is known, avoids that entirely.
 RUN /opt/build/common/install-dotfiles.sh /etc/skel root:root
 RUN /opt/build/common/install-dotfiles.sh /root root:root
-RUN /opt/build/common/install-dotfiles.sh /config abc:abc
+
+# k8s-gui-shell only: this image's terminal is a real, rendered desktop app
+# (unlike k8s-shell's raw terminal, whatever client emulator the user already
+# has open), so it's the one image that can install a Nerd Font and rely on
+# it. Installs FiraCode Nerd Font Mono system-wide, then swaps in the
+# glyph/powerline-dependent Pastel Powerline prompt theme the shared
+# starship.toml deliberately avoids (see that file's own header comment) -
+# both /root and /etc/skel (-> /config, via 00-init-config-home.sh) so
+# `sudo su` gets the same prompt as abc's own shell.
+COPY packaging/install-nerd-font.sh /opt/build/install-nerd-font.sh
+RUN chmod +x /opt/build/install-nerd-font.sh && /opt/build/install-nerd-font.sh
+COPY packaging/starship.toml /root/.config/starship.toml
+COPY packaging/starship.toml /etc/skel/.config/starship.toml
+
+# xfce4-terminal's own default font, so it renders the theme above without
+# the user opening Preferences first - only /etc/skel (-> /config) matters
+# here, since /root never launches its own XFCE session in this container.
+COPY packaging/xfce4-terminal.terminalrc /etc/skel/.config/xfce4/terminal/terminalrc
 
 # linuxserver's supported extension point: scripts here run once at container
 # start, before the desktop boots, alongside (not instead of) the base
