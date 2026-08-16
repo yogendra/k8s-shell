@@ -61,12 +61,22 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate Docker Image Tag
+        run: |
+          # Get current date in YYYYMM format
+          DATE=$(date +'%Y%m')
+          
+          # Combine into the requested format
+          TAG="v${DATE}-${{ github.run_id }}-${{ github.run_attempt }}"
+          
+          # Save to GITHUB_ENV so subsequent steps can use it
+          echo "IMGTAG=$TAG" >> $GITHUB_ENV
       - name: Publish :latest
         run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=latest
       - name: Publish :sha-<short-sha>
         run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=sha-${{ github.sha }}
       - name: Publish :<date-tag>
-        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=$(date -u +%Y%m%d-%H%M)
+        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=$IMGTAG
       - name: Get published digest
         if: github.ref == 'refs/heads/main'
         id: digest
@@ -76,7 +86,7 @@ jobs:
       - name: Update deployment.yaml with published image digest
         if: github.ref == 'refs/heads/main'
         run: |
-          sed -i -E "s#(ghcr\.io/${{ github.repository }}:latest)(@sha256:[a-f0-9]+)?#\1@${{ steps.digest.outputs.digest }}#g" k8s-shell/k8s/deployment.yaml
+          sed -i -E "s#(ghcr\.io/${{ github.repository }}:latest)(@sha256:[a-f0-9]+)?#\1@$IMGTAG#g" k8s-shell/k8s/deployment.yaml
       - name: Commit and push updated deployment.yaml
         if: github.ref == 'refs/heads/main'
         run: |
@@ -87,5 +97,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add k8s-shell/k8s/deployment.yaml
-          git commit -m "chore: update k8s-shell image digest to ${{ steps.digest.outputs.digest }} [skip ci]"
-          git push
+          git commit -m "chore: update k8s-shell image digest to $IMGTAG [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected, rebasing onto latest main (attempt $i)..."
+            git fetch origin main
+            git rebase origin/main
+          done
+          echo "Failed to push after retries"
+          exit 1
