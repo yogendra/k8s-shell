@@ -3,6 +3,7 @@ version: '3'
 vars:
   DOCKERFILE: packaging/Dockerfile
   CONTEXT: .
+  COMMON_CONTEXT: ../_common
   REPO: yogendra-avgo/k8s-shell
   IMAGE: 'ghcr.io/{{.REPO}}'
   TAG: latest
@@ -26,7 +27,7 @@ tasks:
   build:
     desc: Build the image for the native platform and load it into the local Docker daemon
     cmds:
-      - docker buildx build --load --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+      - docker buildx build --load --build-context common={{.COMMON_CONTEXT}} --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
 
   smoke:
     desc: Build (if needed) and sanity-check that every bundled tool actually runs
@@ -36,6 +37,7 @@ tasks:
         docker run --rm {{.IMAGE}}:{{.TAG}} bash -lc '
           set -e
           kubectl version --client
+          vcf version
           helm version
           istioctl version --remote=false
           velero version --client-only
@@ -53,12 +55,31 @@ tasks:
           fd --version
           eza --version
           direnv --version
+          docker --version
+          dig -v
+          tcpdump --version
+          tshark --version
+          nmap --version
+          mtr --version
+          ping -V
+          socat -V
+          ctop -v
+          calicoctl version
+          termshark --version
+          grpcurl -version
+          fortio version
+          ytt --version
+          kapp --version
+          kbld --version
+          imgpkg --version
+          vendir --version
+          kctrl --version
         '
 
   push:
     desc: Build for amd64+arm64 and push straight to the registry (requires `docker login` / buildx with QEMU)
     cmds:
-      - docker buildx build --platform {{.PLATFORMS}} --push --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+      - docker buildx build --platform {{.PLATFORMS}} --push --build-context common={{.COMMON_CONTEXT}} --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
 
   publish:
     desc: Alias for push, used by CI

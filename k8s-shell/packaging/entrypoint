@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# HOME is baked into the image for the default `shell` user (uid 1000). Under
-# `docker run --user root` (or any other uid) that stale value would still be
-# "/home/shell" - Docker doesn't recompute it from --user - so everything
-# below (and the shell/prompt/multiplexer config, which is identical for
-# shell and root) would silently read/write the wrong home directory.
+# HOME is baked into the image for the default `ubuntu` user (uid 1000).
+# Under `docker run --user root` (or any other uid) that stale value would
+# still be "/home/ubuntu" - Docker doesn't recompute it from --user - so
+# everything below (and the shell/prompt/multiplexer config, which is
+# identical for ubuntu and root) would silently read/write the wrong home
+# directory.
 # Resolve it fresh from /etc/passwd for whichever uid is actually running
 # this container.
 if REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)" && [ -n "$REAL_HOME" ]; then

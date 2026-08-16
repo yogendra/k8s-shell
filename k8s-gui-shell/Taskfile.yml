@@ -1,0 +1,121 @@
+version: '3'
+
+vars:
+  DOCKERFILE: packaging/Dockerfile
+  CONTEXT: .
+  COMMON_CONTEXT: ../_common
+  REPO: yogendra-avgo/k8s-gui-shell
+  IMAGE: 'ghcr.io/{{.REPO}}'
+  TAG: latest
+  PLATFORMS: linux/amd64,linux/arm64
+  WEBTOP_BASE_TAG:
+    sh: grep '^WEBTOP_BASE_TAG=' ../_common/versions.env | cut -d= -f2
+  GIT_REPO:
+    sh: git config --get remote.origin.url
+  GIT_SHA:
+    sh: git rev-parse HEAD
+  GIT_BRANCH:
+    # actions/checkout leaves a detached HEAD, so `git branch --show-current`
+    # is empty in CI - fall back to the ref name GitHub Actions exports.
+    sh: echo "${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+
+tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the image for the native platform and load it into the local Docker daemon
+    cmds:
+      - docker buildx build --load --build-context common={{.COMMON_CONTEXT}} --build-arg WEBTOP_BASE_TAG={{.WEBTOP_BASE_TAG}} --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+
+  smoke:
+    desc: Build (if needed) and sanity-check that every bundled tool actually runs (bypasses webtop's s6 init entirely - this does not verify the desktop itself boots)
+    deps: [build]
+    cmds:
+      - |
+        docker run --rm --entrypoint bash {{.IMAGE}}:{{.TAG}} -lc '
+          set -e
+          kubectl version --client
+          vcf version
+          helm version
+          istioctl version --remote=false
+          velero version --client-only
+          k9s version
+          dive --version
+          govc version
+          stern --version
+          yq --version
+          fzf --version
+          starship --version
+          tmux -V
+          herdr --version
+          bat --version
+          tree --version
+          fd --version
+          eza --version
+          direnv --version
+          docker --version
+          dig -v
+          tcpdump --version
+          tshark --version
+          nmap --version
+          mtr --version
+          ping -V
+          socat -V
+          ctop -v
+          calicoctl version
+          termshark --version
+          grpcurl -version
+          fortio version
+          ytt --version
+          kapp --version
+          kbld --version
+          imgpkg --version
+          vendir --version
+          kctrl --version
+        '
+
+  push:
+    desc: Build for amd64+arm64 and push straight to the registry (requires `docker login` / buildx with QEMU)
+    cmds:
+      - docker buildx build --platform {{.PLATFORMS}} --push --build-context common={{.COMMON_CONTEXT}} --build-arg WEBTOP_BASE_TAG={{.WEBTOP_BASE_TAG}} --build-arg GIT_REPO={{.GIT_REPO}} --build-arg GIT_SHA={{.GIT_SHA}} --build-arg GIT_BRANCH={{.GIT_BRANCH}} -t {{.IMAGE}}:{{.TAG}} -f {{.DOCKERFILE}} {{.CONTEXT}}
+
+  publish:
+    desc: Alias for push, used by CI
+    cmds:
+      - task: push
+
+  git-acpp:
+    vars:
+      MSG: '{{.MSG | default  "sync"}}'
+    cmds:
+    - |
+      git add .
+      git commit -m "{{.MSG}}"
+      git pull --rebase
+      git push
+  git-tag:
+    vars:
+      DATE_TAG:
+        sh: date +%Y-%m-%d
+      GIT_TAG: "v{{.GIT_TAG | default .DATE_TAG}}"
+    cmds:
+    - |
+      echo "Creating git tag for release"
+      git tag "{{.GIT_TAG}}"
+      git push --tags
+  lab:deploy:
+    vars:
+      LAB_CONTEXT: '{{.CTX | default "lab"}}'
+    cmds:
+    - |
+      kubectl --context {{.LAB_CONTEXT}} apply -f k8s/
+  lab:connect:
+    vars:
+      LAB_CONTEXT: '{{.CTX | default "lab"}}'
+    cmds:
+    - |
+      kubectl --context {{.LAB_CONTEXT}} port-forward -n k8s-gui-shell deployments/k8s-gui-shell 3001:3001

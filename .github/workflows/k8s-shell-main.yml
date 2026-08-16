@@ -3,6 +3,7 @@ name: Build and Publish
   push:
     paths:
       - k8s-shell/
+      - _common/
       - .github/workflows/k8s-shell*
     branches:
       - main
@@ -11,6 +12,7 @@ name: Build and Publish
   pull_request:
     paths:
       - k8s-shell/
+      - _common/
       - .github/workflows/k8s-shell*
     branches:
       - main

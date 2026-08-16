@@ -1,15 +1,26 @@
 # Kubernetes Shell
 ![alt text](image.png)
 
-A batteries-included, non-root container for working with Kubernetes clusters.
-It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds:
+A batteries-included, non-root container for working with Kubernetes clusters,
+built on plain `ubuntu:24.04` - no `nicolaka/netshoot` dependency, no Alpine.
+Everything netshoot used to supply for free comes from Ubuntu's own `apt`
+repos instead (see [`_common/install-network-tools.sh`](../_common/install-network-tools.sh)),
+with pinned-version binary downloads only for the handful of tools with no
+apt equivalent. It adds:
 
+- **Network/troubleshooting tools**: the netshoot toolset, ported to apt -
+  `tcpdump`, `tshark`, `nmap`, `mtr`, `dig`/`drill`, `iproute2`, `ngrep`,
+  `socat`, `iptables`/`nftables`, `iperf`/`iperf3`, `strace`, `scapy`,
+  `httpie`, and more - plus the tools netshoot fetches as binaries with no
+  apt package at all: `ctop`, `calicoctl`, `termshark`, `grpcurl`, `fortio`,
+  `trippy`, `websocat`
 - **Cluster tools**: kubectl (completion + `k` alias wired up), helm, istioctl,
-  velero, k9s, stern, yq, govc, and [krew](https://krew.sigs.k8s.io/) with
-  a handful of commonly used plugins pre-installed: `ctx`/`ns` (switch
-  context/namespace), `tree` (show a resource's ownership tree), `neat`
-  (strip noisy managed fields from `-o yaml`), `who-can` (RBAC lookup),
-  `view-secret`, `get-all`, `images`
+  velero, k9s, stern, yq, govc, vcf-cli, the [Carvel](https://carvel.dev) suite
+  (`ytt`, `kapp`, `kbld`, `imgpkg`, `vendir`, `kctrl`), and
+  [krew](https://krew.sigs.k8s.io/) with a handful of commonly used plugins
+  pre-installed: `ctx`/`ns` (switch context/namespace), `tree` (show a
+  resource's ownership tree), `neat` (strip noisy managed fields from
+  `-o yaml`), `who-can` (RBAC lookup), `view-secret`, `get-all`, `images`
 - **Image tools**: dive
 - **Shell**: bash, tmux (with [tpm](https://github.com/tmux-plugins/tpm),
   the catppuccin-tmux theme with 24-bit colour explicitly forced on (no
@@ -24,13 +35,15 @@ It's built on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) and adds
   entrypoint starts/attaches; set `K8S_MUX=tmux` to use tmux instead (see
   [Usage - Docker](#usage---docker))
 
-Dotfiles live in [`src/`](src) and are baked into the image at
-`~/.bashrc`, `.bash_profile`, `.vimrc`, `.config/starship.toml`,
-`.config/tmux/tmux.conf` - for both the default non-root user and root (see
-below), so the experience is the same either way. `.bash_profile` just
-sources `.bashrc`: Alpine's `/etc/profile` resets `PATH` for login shells
-before anything else runs, so without it a login shell would silently lose
-krew, aliases, and everything else in `.bashrc`. `ls`/`l`/`ll`/`la`/`lt`/...
+Dotfiles live in [`_common/dotfiles/`](../_common/dotfiles) - shared with
+[`k8s-gui-shell`](../k8s-gui-shell), see [`../_common/README`](../_common) -
+and are baked into the image at `~/.bashrc`, `.bash_profile`, `.vimrc`,
+`.config/starship.toml`, `.config/tmux/tmux.conf` - for both the default
+non-root user and root (see below), so the experience is the same either
+way. `.bash_profile` just sources `.bashrc`: Ubuntu's `/etc/profile` resets
+`PATH` for login shells before anything else runs, so without it a login
+shell would silently lose krew, aliases, and everything else in `.bashrc`.
+`ls`/`l`/`ll`/`la`/`lt`/...
 are aliased to eza, `cat` to bat, and fzf's file/history search is fd + bat
 powered, mirroring a typical local zsh setup.
 
@@ -53,11 +66,13 @@ command to *your* clipboard via an OSC 52 escape sequence rather than
 multiplexer/`docker exec`/`kubectl exec` as long as your terminal emulator
 supports OSC 52 (most modern ones do).
 
-The image runs as a non-root user (`shell`, uid 1000) by default. Netshoot's
-raw-socket tools (`tcpdump`, `nmap` SYN scans, ...) need root/`CAP_NET_RAW` -
-run with `--user root` (Docker) or add the capability in your pod's
-`securityContext` if you need those; root gets the identical dotfiles/prompt/
-multiplexer setup too.
+The image runs as a non-root user (`ubuntu`, uid 1000 - `ubuntu:24.04`'s own
+pre-created user) by default. Raw-socket tools (`tcpdump`, `nmap` SYN scans,
+...) need root/`CAP_NET_RAW` - run with `--user root` (Docker) or add the
+capability in your pod's `securityContext` if you need those; root gets the
+identical dotfiles/prompt/multiplexer setup too. `tshark`/`dumpcap` are the
+exception - the `ubuntu` user is a member of the `wireshark` group, so
+packet capture works without root or extra capabilities.
 
 ## Usage - Docker
 
@@ -68,13 +83,13 @@ instead.
 
 ```bash
 # One-shot: attach straight into the multiplexer, container dies when you detach/exit
-docker run --rm -it -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
+docker run --rm -it -v ~/.kube:/home/ubuntu/.kube ghcr.io/yogendra-avgo/k8s-shell
 
 # ...or explicitly pick tmux instead of the herdr default
-docker run --rm -it -e K8S_MUX=tmux -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
+docker run --rm -it -e K8S_MUX=tmux -v ~/.kube:/home/ubuntu/.kube ghcr.io/yogendra-avgo/k8s-shell
 
 # Long-running: start it once, hop in and out over time without losing state
-docker run -d --name k8s-shell -v ~/.kube:/home/shell/.kube ghcr.io/yogendra-avgo/k8s-shell
+docker run -d --name k8s-shell -v ~/.kube:/home/ubuntu/.kube ghcr.io/yogendra-avgo/k8s-shell
 docker exec -it k8s-shell herdr session attach main
 # <prefix>-q to detach (herdr's default prefix is ctrl-b, same as tmux's) -
 # the container (and your session) keeps running
@@ -212,14 +227,14 @@ connection alike.
 Grab just the dotfiles onto your own host, no Docker required:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/.bashrc >> ~/.bashrc
+curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/_common/dotfiles/.bashrc >> ~/.bashrc
 
-curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/.vimrc >> ~/.vimrc
+curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/_common/dotfiles/.vimrc >> ~/.vimrc
 
 mkdir -p ~/.config/tmux
-curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/tmux.conf -o ~/.config/tmux/tmux.conf
+curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/_common/dotfiles/.config/tmux/tmux.conf -o ~/.config/tmux/tmux.conf
 
-curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/src/starship.toml -o ~/.config/starship.toml
+curl -sSL https://raw.githubusercontent.com/yogendra-avgo/k8s-shell/main/_common/dotfiles/.config/starship.toml -o ~/.config/starship.toml
 ```
 
 ## Building locally
@@ -235,13 +250,18 @@ task push    # build linux/amd64+linux/arm64 and push to the registry
 
 ## CI/CD
 
-`.github/workflows/main.yml` builds and smoke-tests every push/PR, and on
-pushes to `main` (or a `v*` tag) publishes multi-arch images to
-`ghcr.io/yogendra-avgo/k8s-shell` tagged `:latest` and `:sha-<commit>`.
+[`.github/workflows/k8s-shell-main.yml`](../.github/workflows/k8s-shell-main.yml)
+builds and smoke-tests every push/PR that touches `k8s-shell/` or
+`_common/`, and on pushes to `main` (or a `v*` tag) publishes multi-arch
+images to `ghcr.io/yogendra-avgo/k8s-shell` tagged `:latest`,
+`:sha-<commit>`, and a UTC date tag.
 
 ## Acknowledgements
 
-Built on top of [nicolaka/netshoot](https://github.com/nicolaka/netshoot)
-by [@nicolaka](https://github.com/nicolaka) - the base image that provides
-most of the network debugging toolset (`tshark`, `tcpdump`, `nmap`, `iproute2`,
-...) this image builds on.
+The network/troubleshooting tool curation (`tshark`, `tcpdump`, `nmap`,
+`iproute2`, `ctop`, `calicoctl`, `termshark`, `grpcurl`, `fortio`, ...) is
+based on [nicolaka/netshoot](https://github.com/nicolaka/netshoot) by
+[@nicolaka](https://github.com/nicolaka) - this image no longer builds
+`FROM` it (see [`_common/install-network-tools.sh`](../_common/install-network-tools.sh)
+for the Ubuntu/apt port), but its tool list is the reason this image covers
+what it does.

@@ -1,0 +1,40 @@
+version: '3'
+
+includes:
+  k8s-shell:
+    taskfile: ./k8s-shell
+    dir: ./k8s-shell
+  k8s-gui-shell:
+    taskfile: ./k8s-gui-shell
+    dir: ./k8s-gui-shell
+
+tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  all:build:
+    desc: Build every image for the native platform and load it into the local Docker daemon
+    cmds:
+      - task: k8s-shell:build
+      - task: k8s-gui-shell:build
+
+  all:smoke:
+    desc: Build (if needed) and sanity-check every bundled tool in every image
+    cmds:
+      - task: k8s-shell:smoke
+      - task: k8s-gui-shell:smoke
+
+  all:push:
+    desc: Build every image for amd64+arm64 and push straight to the registry
+    cmds:
+      - task: k8s-shell:push
+      - task: k8s-gui-shell:push
+
+  all:publish:
+    desc: Alias for all:push, used by CI
+    cmds:
+      - task: k8s-shell:publish
+      - task: k8s-gui-shell:publish
