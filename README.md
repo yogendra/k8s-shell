@@ -1,13 +1,16 @@
-# k8s-shell
+# k8s-shell: Container Toolbox for Working with VCF
+
+k8s-shell : [![Build and Publish](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-shell-main.yml/badge.svg)](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-shell-main.yml)
+k8s-gui-shell : [![Build and Publish (GUI)](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-gui-shell-main.yml/badge.svg)](https://github.com/yogendra-avgo/k8s-shell/actions/workflows/k8s-gui-shell-main.yml)
 
 Batteries-included container images for operating and troubleshooting
 Kubernetes clusters, built on plain Ubuntu (no `nicolaka/netshoot`, no
 Alpine) - a terminal image and a full browser-based desktop, sharing one set
 of installation scripts so they never drift apart.
 
-| Image | What it is | Directory |
-|---|---|---|
-| **k8s-shell** | A non-root terminal container: bash + tmux/herdr + kubectl/helm/istioctl/velero/k9s/stern/... + the full netshoot-equivalent network toolset, all `apt`/pinned-binary installed on `ubuntu:24.04`. | [`k8s-shell/`](k8s-shell) |
+| Image             | What it is                                                                                                                                                                                                                                                      | Directory                         |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **k8s-shell**     | A non-root terminal container: bash + tmux/herdr + kubectl/helm/istioctl/velero/k9s/stern/... + the full netshoot-equivalent network toolset, all `apt`/pinned-binary installed on `ubuntu:24.04`.                                                              | [`k8s-shell/`](k8s-shell)         |
 | **k8s-gui-shell** | The same tool/dotfile bundle, layered onto [linuxserver/webtop](https://docs.linuxserver.io/images/docker-webtop/)'s Ubuntu+XFCE desktop-in-a-browser, for when you want a full GUI (multiple terminals, a browser, file manager, ...) instead of just a shell. | [`k8s-gui-shell/`](k8s-gui-shell) |
 
 See each image's own README for its full tool list, usage examples
@@ -86,7 +89,7 @@ check.
   task so CI actually checks it.
 - **Changing shared behavior** (dotfiles, an install script): a change
   under `_common/` affects both images - run `task all:build && task
-  all:smoke` before pushing, since both images' CI workflows trigger on
+all:smoke` before pushing, since both images' CI workflows trigger on
   `_common/` changes and will fail together if something's broken.
 - **Adding a new image**: copy the shape of `k8s-shell/` or
   `k8s-gui-shell/` (`packaging/Dockerfile` that installs `_common`'s
