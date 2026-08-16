@@ -37,7 +37,7 @@ jobs:
       - name: Build (native arch, loaded locally)
         run: task -d k8s-shell build
       - name: Smoke test bundled tools
-        run: task task -d k8s-shell  smoke
+        run: task -d k8s-shell  smoke
 
   publish:
     needs: build
@@ -64,11 +64,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish :latest
-        run: task task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=latest
+        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=latest
       - name: Publish :sha-<short-sha>
-        run: task task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=sha-${{ github.sha }}
+        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=sha-${{ github.sha }}
       - name: Publish :<date-tag>
-        run: task task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=$(date -u +%Y%m%d-%H%M)
+        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=$(date -u +%Y%m%d-%H%M)
       - name: Get published digest
         if: github.ref == 'refs/heads/main'
         id: digest
