@@ -43,7 +43,7 @@ spec:
       serviceAccountName: k8s-gui-shell-sa
       containers:
         - name: k8s-gui-shell
-          image: ghcr.io/yogendra-avgo/k8s-gui-shell::v202608-5-1
+          image: ghcr.io/yogendra-avgo/k8s-gui-shell::v202608-6-1
           env:
             - name: PUID
               value: "1000"
