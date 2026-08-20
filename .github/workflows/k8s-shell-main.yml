@@ -21,7 +21,8 @@ name: Build and Publish
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
+env: 
+  IMAGE: ghcr.io/${{ github.repository_owner }}/k8s-shell
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -72,21 +73,22 @@ jobs:
           # Save to GITHUB_ENV so subsequent steps can use it
           echo "IMGTAG=$TAG" >> $GITHUB_ENV
       - name: Publish :latest
-        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=latest
+        run: task -d k8s-shell  publish IMAGE=${{ env.IMAGE }} TAG=latest
       - name: Publish :sha-<short-sha>
-        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=sha-${{ github.sha }}
+        run: task -d k8s-shell  publish IMAGE=${{ env.IMAGE }} TAG=sha-${{ github.sha }}
       - name: Publish :<date-tag>
-        run: task -d k8s-shell  publish IMAGE=ghcr.io/${{ github.repository }} TAG=$IMGTAG
+        run: task -d k8s-shell  publish IMAGE=${{ env.IMAGE }} TAG=$IMGTAG
       - name: Get published digest
         if: github.ref == 'refs/heads/main'
         id: digest
         run: |
-          digest=$(docker buildx imagetools inspect ghcr.io/${{ github.repository }}:latest --format '{{.Manifest.Digest}}')
+          digest=$(docker buildx imagetools inspect ${{ env.IMAGE }}:latest --format '{{.Manifest.Digest}}')
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
       - name: Update deployment.yaml with published image digest
         if: github.ref == 'refs/heads/main'
         run: |
-          sed -i -E "s#(ghcr\.io/${{ github.repository }}:latest)(@sha256:[a-f0-9]+)?#\1@$IMGTAG#g" k8s-shell/k8s/deployment.yaml
+          sed -i -E "s#(${{ env.IMAGE }}:).+?#\1:$IMGTAG#g" k8s-shell/k8s/deployment.yaml
+          sed -i -E "s#(${{ env.IMAGE }}:).+?#\1:$IMGTAG#g" k8s-shell/k8s/deployment-dind.yaml
       - name: Commit and push updated deployment.yaml
         if: github.ref == 'refs/heads/main'
         run: |

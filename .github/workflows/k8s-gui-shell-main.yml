@@ -93,7 +93,7 @@ jobs:
       - name: Update deployment.yaml with published image digest
         if: github.ref == 'refs/heads/main'
         run: |
-          sed -i -E "s#(${{ env.IMAGE }}:latest)(@sha256:[a-f0-9]+)?#\1@$IMGTAG#g" k8s-gui-shell/k8s/deployment.yaml
+          sed -i -E "s#(${{ env.IMAGE }}:).+?#\1:$IMGTAG#g" k8s-gui-shell/k8s/deployment.yaml
       - name: Commit and push updated deployment.yaml
         if: github.ref == 'refs/heads/main'
         run: |
