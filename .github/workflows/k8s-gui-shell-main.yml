@@ -35,8 +35,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Setup Task
-        uses: arduino/setup-task@v3
+      - name: Cache Task CLI
+        id: cache-task
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/task
+          key: ${{ runner.os }}-task-v3.38.0      
+      - name: Install Task CLI if missing from cache
+        if: steps.cache-task.outputs.cache-hit != 'true'
+        run: |
+          sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin v3.38.0
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v4
       - name: Setup Buildx
