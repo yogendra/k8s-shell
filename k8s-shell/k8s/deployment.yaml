@@ -53,7 +53,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: seed-home
-          image: ghcr.io/yogendra-avgo/k8s-shell:latest@v202608-6-1@v202608-31941729645-1
+          image: ghcr.io/yogendra-avgo/k8s-shell::v202608-8-1
           command: ["sh", "-c", "cp -a /home/ubuntu/. /home-writable/"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -65,7 +65,7 @@ spec:
               mountPath: /home-writable
       containers:
         - name: k8s-shell
-          image: ghcr.io/yogendra-avgo/k8s-shell:latest@v202608-6-1@v202608-31941729645-1
+          image: ghcr.io/yogendra-avgo/k8s-shell::v202608-8-1
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
